@@ -26,7 +26,7 @@ export function parseCSV(text: string): Lead[] {
       instagram: cols[11]?.trim() || '',
       responsavel: '',
       descricao: '',
-      status: 'none',
+      status: 'none' as const,
       whatsapp_group: '',
       meeting_dates: [],
     };
