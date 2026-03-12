@@ -13,7 +13,19 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['Roboto Mono', 'monospace'],
+      },
       colors: {
+        status: {
+          evaluating: "hsl(var(--status-evaluating))",
+          "evaluating-text": "hsl(var(--status-evaluating-text))",
+          talking: "hsl(var(--status-talking))",
+          "talking-text": "hsl(var(--status-talking-text))",
+          meeting: "hsl(var(--status-meeting))",
+          "meeting-text": "hsl(var(--status-meeting-text))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
