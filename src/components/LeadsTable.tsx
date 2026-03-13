@@ -1,10 +1,9 @@
 import { Lead } from '@/lib/types';
-import { StatusBadge } from './StatusBadge';
 import { StatusSelect } from './StatusSelect';
 import { Button } from '@/components/ui/button';
-import { Eye, Star } from 'lucide-react';
+import { Eye, Star, Pencil, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useState } from 'react';
 
 interface Props {
   leads: Lead[];
@@ -13,72 +12,82 @@ interface Props {
 }
 
 const statusRowBg: Record<string, string> = {
-  avaliando: 'bg-status-evaluating/50',
-  conversando: 'bg-status-talking/50',
-  reuniao_marcada: 'bg-status-meeting/50',
+  avaliando: 'bg-[hsl(var(--status-evaluating)/0.35)]',
+  conversando: 'bg-[hsl(var(--status-talking)/0.35)]',
+  reuniao_marcada: 'bg-[hsl(var(--status-meeting)/0.35)]',
 };
+
+function EditableCell({ value, onChange, className = '' }: { value: string; onChange: (v: string) => void; className?: string }) {
+  return (
+    <Input
+      className={`h-8 text-xs border-transparent bg-transparent hover:border-input focus:border-input transition-colors ${className}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
 
 export function LeadsTable({ leads, onOpenLead, onUpdateLead }: Props) {
   return (
-    <div className="border rounded-lg bg-card overflow-hidden">
+    <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-secondary/50">
-              <th className="sticky left-0 z-10 bg-secondary/90 backdrop-blur px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Nome</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Status</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Título</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Categoria</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Cidade</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">UF</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Telefone</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Rating</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Avaliações</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Responsável</th>
-              <th className="px-3 py-2 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">Descrição</th>
-              <th className="sticky right-0 z-10 bg-secondary/90 backdrop-blur px-3 py-2 text-center font-medium text-xs text-muted-foreground whitespace-nowrap">Ação</th>
+            <tr className="border-b bg-muted/60">
+              <th className="sticky left-0 z-10 bg-muted/90 backdrop-blur px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nome</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Status</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Título</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Categoria</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Cidade</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">UF</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Telefone</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Rating</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Avaliações</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Responsável</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Descrição</th>
+              <th className="sticky right-0 z-10 bg-muted/90 backdrop-blur px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground whitespace-nowrap">Ação</th>
             </tr>
           </thead>
           <tbody>
             {leads.map((lead) => (
-              <tr key={lead.id} className={`border-b hover:bg-secondary/30 transition-colors ${statusRowBg[lead.status] || ''}`}>
-                <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-medium whitespace-nowrap max-w-[200px] truncate" style={lead.status !== 'none' ? { backgroundColor: 'inherit' } : undefined}>
-                  {lead.name}
+              <tr key={lead.id} className={`border-b hover:bg-muted/30 transition-colors ${statusRowBg[lead.status] || ''}`}>
+                <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-medium whitespace-nowrap max-w-[200px]" style={lead.status !== 'none' ? { backgroundColor: 'inherit' } : undefined}>
+                  <EditableCell value={lead.name} onChange={(v) => onUpdateLead({ ...lead, name: v })} className="font-medium w-[180px]" />
                 </td>
                 <td className="px-3 py-1.5">
                   <StatusSelect value={lead.status} onChange={(s) => onUpdateLead({ ...lead, status: s })} />
                 </td>
-                <td className="px-3 py-1.5 whitespace-nowrap max-w-[150px] truncate">{lead.title}</td>
-                <td className="px-3 py-1.5 whitespace-nowrap max-w-[120px] truncate">{lead.category}</td>
-                <td className="px-3 py-1.5 whitespace-nowrap">{lead.city}</td>
-                <td className="px-3 py-1.5 whitespace-nowrap">{lead.state}</td>
-                <td className="px-3 py-1.5 whitespace-nowrap font-mono-num text-xs">{lead.phone}</td>
+                <td className="px-3 py-1.5">
+                  <EditableCell value={lead.title} onChange={(v) => onUpdateLead({ ...lead, title: v })} className="w-[140px]" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <EditableCell value={lead.category} onChange={(v) => onUpdateLead({ ...lead, category: v })} className="w-[120px]" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <EditableCell value={lead.city} onChange={(v) => onUpdateLead({ ...lead, city: v })} className="w-[110px]" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <EditableCell value={lead.state} onChange={(v) => onUpdateLead({ ...lead, state: v })} className="w-[50px]" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <EditableCell value={lead.phone} onChange={(v) => onUpdateLead({ ...lead, phone: v })} className="w-[130px] font-mono-num" />
+                </td>
                 <td className="px-3 py-1.5 whitespace-nowrap">
                   {lead.rating && (
-                    <span className="flex items-center gap-1 font-mono-num">
+                    <span className="flex items-center gap-1 font-mono-num text-xs">
                       <Star className="w-3 h-3 text-yellow-500" />{lead.rating}
                     </span>
                   )}
                 </td>
                 <td className="px-3 py-1.5 whitespace-nowrap font-mono-num text-xs">{lead.reviews_count}</td>
                 <td className="px-3 py-1.5">
-                  <Input
-                    className="h-7 text-xs w-[120px]"
-                    placeholder="Responsável"
-                    value={lead.responsavel}
-                    onChange={(e) => onUpdateLead({ ...lead, responsavel: e.target.value })}
-                  />
+                  <EditableCell value={lead.responsavel} onChange={(v) => onUpdateLead({ ...lead, responsavel: v })} className="w-[120px]" />
                 </td>
                 <td className="px-3 py-1.5">
-                  <Input
-                    className="h-7 text-xs w-[140px]"
-                    placeholder="Descrição"
-                    value={lead.descricao}
-                    onChange={(e) => onUpdateLead({ ...lead, descricao: e.target.value })}
-                  />
+                  <EditableCell value={lead.descricao} onChange={(v) => onUpdateLead({ ...lead, descricao: v })} className="w-[160px]" />
                 </td>
                 <td className="sticky right-0 z-10 bg-card px-3 py-1.5 text-center">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onOpenLead(lead)}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg" onClick={() => onOpenLead(lead)}>
                     <Eye className="w-4 h-4" />
                   </Button>
                 </td>
@@ -88,8 +97,9 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead }: Props) {
         </table>
       </div>
       {leads.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          Nenhum lead encontrado. Faça upload de uma planilha ou adicione manualmente.
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-lg font-medium">Nenhum lead encontrado</p>
+          <p className="text-sm mt-1">Faça upload de uma planilha ou adicione manualmente.</p>
         </div>
       )}
     </div>
