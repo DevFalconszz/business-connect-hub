@@ -15,17 +15,17 @@ const fields = [
   { key: 'name', label: 'Nome *', required: true },
   { key: 'title', label: 'Título' },
   { key: 'category', label: 'Categoria' },
-  { key: 'address', label: 'Endereço' },
+  { key: 'address', label: 'Endereço', full: true },
   { key: 'city', label: 'Cidade' },
   { key: 'state', label: 'Estado' },
   { key: 'phone', label: 'Telefone' },
-  { key: 'website', label: 'Website' },
-  { key: 'google_maps_url', label: 'Google Maps URL' },
+  { key: 'website', label: 'Website', full: true },
+  { key: 'google_maps_url', label: 'Google Maps URL', full: true },
   { key: 'rating', label: 'Rating' },
   { key: 'reviews_count', label: 'Nº Avaliações' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'responsavel', label: 'Pessoa Responsável' },
-  { key: 'descricao', label: 'Descrição' },
+  { key: 'descricao', label: 'Descrição', full: true },
 ] as const;
 
 export function AddLeadModal({ open, onClose, onAdd }: Props) {
@@ -59,23 +59,25 @@ export function AddLeadModal({ open, onClose, onAdd }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Adicionar Nova Empresa</DialogTitle>
+          <DialogTitle className="text-lg">Adicionar Nova Empresa</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
           {fields.map(f => (
-            <div key={f.key} className={f.key === 'address' || f.key === 'google_maps_url' || f.key === 'descricao' ? 'col-span-2' : ''}>
-              <Label className="text-xs">{f.label}</Label>
+            <div key={f.key} className={'full' in f && f.full ? 'sm:col-span-2' : ''}>
+              <Label className="text-xs text-muted-foreground">{f.label}</Label>
               <Input
-                className="h-8 text-sm"
+                className="h-11 text-sm mt-1 rounded-xl"
                 value={form[f.key] || ''}
                 onChange={(e) => setForm(p => ({ ...p, [f.key]: e.target.value }))}
               />
             </div>
           ))}
         </div>
-        <Button onClick={handleSubmit} className="w-full mt-3">Adicionar</Button>
+        <Button onClick={handleSubmit} className="w-full mt-4 h-12 rounded-xl text-base font-semibold">
+          Adicionar Empresa
+        </Button>
       </DialogContent>
     </Dialog>
   );
