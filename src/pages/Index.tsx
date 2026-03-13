@@ -1,74 +1,72 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead } from '@/lib/types';
 import { parseCSV } from '@/lib/csv-parser';
-import { loadLeads, saveLeads } from '@/lib/leads-store';
+import { loadLeads, insertLead, insertLeads, updateLead } from '@/lib/leads-store';
 import { LeadsTable } from '@/components/LeadsTable';
 import { LeadCard } from '@/components/LeadCard';
 import { LeadModal } from '@/components/LeadModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
-import { Upload, Plus, Search, LayoutGrid, Table2 } from 'lucide-react';
+import { Upload, Plus, Search, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 const Index = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const fileRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
-  // Auto-switch to cards on mobile
   useEffect(() => {
     if (isMobile) setViewMode('cards');
   }, [isMobile]);
 
-  // Load from localStorage or default CSV
+  // Load from database
   useEffect(() => {
-    const stored = loadLeads();
-    if (stored.length > 0) {
-      setLeads(stored);
-      setLoaded(true);
-    } else {
-      fetch('/data/leads.csv')
-        .then(r => r.text())
-        .then(text => {
-          const parsed = parseCSV(text);
-          setLeads(parsed);
-          saveLeads(parsed);
-          setLoaded(true);
-        })
-        .catch(() => setLoaded(true));
-    }
+    loadLeads().then(data => {
+      setLeads(data);
+      setLoading(false);
+    });
   }, []);
 
-  // Save on change
-  useEffect(() => {
-    if (loaded) saveLeads(leads);
-  }, [leads, loaded]);
-
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target?.result as string;
       const parsed = parseCSV(text);
-      setLeads(prev => [...prev, ...parsed]);
+      const inserted = await insertLeads(parsed);
+      if (inserted.length > 0) {
+        setLeads(prev => [...inserted, ...prev]);
+        toast.success(`${inserted.length} leads importados com sucesso!`);
+      } else {
+        toast.error('Erro ao importar leads.');
+      }
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
-  const handleUpdateLead = (updated: Lead) => {
+  const handleUpdateLead = useCallback(async (updated: Lead) => {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
-  };
+    await updateLead(updated);
+  }, []);
 
-  const handleAddLead = (lead: Lead) => {
-    setLeads(prev => [lead, ...prev]);
+  const handleAddLead = async (lead: Lead) => {
+    const { id, ...rest } = lead;
+    const inserted = await insertLead(rest);
+    if (inserted) {
+      setLeads(prev => [inserted, ...prev]);
+      toast.success('Lead adicionado!');
+    } else {
+      toast.error('Erro ao adicionar lead.');
+    }
   };
 
   const filtered = useMemo(() => {
@@ -84,7 +82,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-[1600px] mx-auto px-4 py-3">
           <div className="flex items-center gap-3 flex-wrap">
@@ -141,9 +138,12 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-[1600px] mx-auto px-4 py-4">
-        {viewMode === 'table' ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : viewMode === 'table' ? (
           <LeadsTable leads={filtered} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -160,7 +160,6 @@ const Index = () => {
         )}
       </main>
 
-      {/* Modals */}
       <LeadModal
         lead={selectedLead}
         open={!!selectedLead}
