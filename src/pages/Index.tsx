@@ -82,18 +82,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-20">
+      <div className="border-b bg-card/50">
         <div className="max-w-[1600px] mx-auto px-4 py-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground mr-auto">
-              📋 Gestão de Leads
-            </h1>
-            <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-              {leads.length} leads
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
