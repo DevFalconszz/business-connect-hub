@@ -125,9 +125,13 @@ const Index = () => {
               <span className="hidden sm:inline">Adicionar</span>
               <span className="sm:hidden">Novo</span>
             </Button>
+
+            <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+              {leads.length} leads
+            </span>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-[1600px] mx-auto px-4 py-4">
         {loading ? (
