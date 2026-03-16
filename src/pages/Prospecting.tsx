@@ -3,20 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { searchBusinesses, SearchResult } from '@/lib/firecrawl-api';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { searchBusinesses, StructuredResult } from '@/lib/firecrawl-api';
 import { insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
-import { Search, Plus, Loader2, ExternalLink, Globe, BarChart3, Megaphone, Code, Bot, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, Loader2, Globe, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Prospecting() {
   const [niche, setNiche] = useState('');
   const [city, setCity] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<StructuredResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
   const [responsavel, setResponsavel] = useState('');
-  const [statsIndex, setStatsIndex] = useState<number | null>(null);
 
   const handleSearch = async () => {
     if (!niche.trim() || !city.trim()) {
@@ -40,27 +40,27 @@ export default function Prospecting() {
     }
   };
 
-  const handleAddLead = async (result: SearchResult) => {
+  const handleAddLead = async (result: StructuredResult) => {
     if (!responsavel.trim()) {
       toast.error('Informe o nome do responsável.');
       return;
     }
 
     const lead: Omit<Lead, 'id'> = {
-      name: result.title || 'Sem nome',
-      title: result.description || '',
-      category: niche,
-      address: '',
-      city: city,
-      state: '',
-      phone: '',
-      website: result.url || '',
-      google_maps_url: '',
-      rating: '',
-      reviews_count: '',
-      instagram: '',
+      name: result.name || 'Sem nome',
+      title: result.title || '',
+      category: result.category || niche,
+      address: result.address || '',
+      city: result.city || city,
+      state: result.state || '',
+      phone: result.phone || '',
+      website: result.website || '',
+      google_maps_url: result.google_maps_url || '',
+      rating: result.rating || '',
+      reviews_count: result.reviews_count || '',
+      instagram: result.instagram || '',
       responsavel: responsavel,
-      descricao: result.markdown?.substring(0, 300) || '',
+      descricao: '',
       status: 'none',
       whatsapp_group: '',
       meeting_dates: [],
@@ -68,7 +68,7 @@ export default function Prospecting() {
 
     const inserted = await insertLead(lead);
     if (inserted) {
-      toast.success(`"${result.title}" adicionado aos leads!`);
+      toast.success(`"${result.name}" adicionado aos leads!`);
       setAddingIndex(null);
       setResponsavel('');
     } else {
@@ -78,7 +78,7 @@ export default function Prospecting() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-[1200px] mx-auto px-4 py-6">
+      <main className="max-w-[1400px] mx-auto px-4 py-6">
         {/* Search Section */}
         <Card className="mb-6 border-none shadow-md bg-card">
           <CardHeader className="pb-3">
@@ -123,7 +123,7 @@ export default function Prospecting() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Buscando estabelecimentos...</p>
+            <p className="text-sm text-muted-foreground">Buscando e analisando estabelecimentos com IA...</p>
           </div>
         )}
 
@@ -133,93 +133,77 @@ export default function Prospecting() {
               {results.length} resultados para <span className="text-foreground font-semibold">"{niche}"</span> em <span className="text-foreground font-semibold">{city}</span>
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {results.map((result, i) => (
-                <Card key={i} className="shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-foreground text-sm truncate">
-                          {result.title || 'Sem título'}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {result.description || 'Sem descrição disponível'}
-                        </p>
-                        {result.url && (
-                          <a
-                            href={result.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+            <Card className="border-none shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Cidade</TableHead>
+                      <TableHead>UF</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Avaliações</TableHead>
+                      <TableHead>Site</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((result, i) => (
+                      <TableRow key={i} className="hover:bg-muted/50">
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            className="h-8 w-8 p-0 rounded-lg"
+                            onClick={() => { setAddingIndex(i); setResponsavel(''); }}
+                            title="Adicionar aos leads"
                           >
-                            <Globe className="w-3 h-3" />
-                            Visitar site
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1.5 shrink-0">
-                        <Button
-                          size="sm"
-                          className="h-10 w-10 p-0 rounded-xl"
-                          onClick={() => { setAddingIndex(i); setResponsavel(''); }}
-                          title="Adicionar aos leads"
-                        >
-                          <Plus className="w-5 h-5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-10 w-10 p-0 rounded-xl"
-                          onClick={() => setStatsIndex(statsIndex === i ? null : i)}
-                          title="Ver estatísticas e serviços"
-                        >
-                          <BarChart3 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Stats Panel */}
-                    {statsIndex === i && (
-                      <div className="mt-3 pt-3 border-t space-y-3">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          Oportunidades de Serviços
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <ServiceCard
-                            icon={<Megaphone className="w-5 h-5" />}
-                            title="Marketing Digital"
-                            items={['Google Ads', 'Meta Ads', 'SEO Local', 'Gestão de redes sociais']}
-                          />
-                          <ServiceCard
-                            icon={<Code className="w-5 h-5" />}
-                            title="Criação de Sites"
-                            items={['Landing pages', 'Site institucional', 'E-commerce', 'Blog corporativo']}
-                          />
-                          <ServiceCard
-                            icon={<Bot className="w-5 h-5" />}
-                            title="Automações"
-                            items={['Chatbot WhatsApp', 'Agendamento online', 'CRM automatizado', 'Email marketing']}
-                          />
-                        </div>
-
-                        {result.markdown && (
-                          <details className="text-xs">
-                            <summary className="cursor-pointer text-primary font-medium flex items-center gap-1">
-                              Ver conteúdo extraído
-                            </summary>
-                            <div className="mt-2 bg-muted rounded-lg p-3 max-h-40 overflow-y-auto whitespace-pre-wrap text-muted-foreground">
-                              {result.markdown.substring(0, 1000)}
-                            </div>
-                          </details>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-medium text-sm max-w-[200px] truncate">
+                          {result.name || '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {result.category || '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {result.city || '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {result.state || '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {result.phone || '—'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {result.rating ? (
+                            <span className="text-yellow-600 font-medium">⭐ {result.rating}</span>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {result.reviews_count || '—'}
+                        </TableCell>
+                        <TableCell>
+                          {result.website ? (
+                            <a
+                              href={result.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <Globe className="w-3 h-3" />
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
           </div>
         )}
 
@@ -240,9 +224,12 @@ export default function Prospecting() {
           </DialogHeader>
           {addingIndex !== null && results[addingIndex] && (
             <div className="space-y-4">
-              <div className="bg-muted rounded-xl p-3">
-                <p className="font-semibold text-sm truncate">{results[addingIndex].title}</p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{results[addingIndex].url}</p>
+              <div className="bg-muted rounded-xl p-3 space-y-1">
+                <p className="font-semibold text-sm truncate">{results[addingIndex].name}</p>
+                <p className="text-xs text-muted-foreground">{results[addingIndex].category} • {results[addingIndex].city}/{results[addingIndex].state}</p>
+                {results[addingIndex].phone && (
+                  <p className="text-xs text-muted-foreground">📞 {results[addingIndex].phone}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Responsável *</label>
@@ -265,25 +252,6 @@ export default function Prospecting() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function ServiceCard({ icon, title, items }: { icon: React.ReactNode; title: string; items: string[] }) {
-  return (
-    <div className="bg-muted/50 rounded-xl p-3 space-y-2">
-      <div className="flex items-center gap-2 text-primary">
-        {icon}
-        <span className="text-xs font-semibold">{title}</span>
-      </div>
-      <ul className="space-y-1">
-        {items.map((item, i) => (
-          <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <span className="w-1 h-1 rounded-full bg-primary/50 shrink-0" />
-            {item}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
