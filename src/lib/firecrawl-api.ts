@@ -13,6 +13,8 @@ export interface StructuredResult {
   address: string;
   instagram: string;
   google_maps_url: string;
+  has_website: boolean;
+  has_ads: boolean;
 }
 
 export interface SearchResponse {
