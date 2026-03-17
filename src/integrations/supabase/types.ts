@@ -26,6 +26,8 @@ export type Database = {
           instagram: string
           meeting_dates: string[]
           name: string
+          nome_decisor: string
+          numero_decisor: string
           phone: string
           rating: string
           responsavel: string
@@ -48,6 +50,8 @@ export type Database = {
           instagram?: string
           meeting_dates?: string[]
           name?: string
+          nome_decisor?: string
+          numero_decisor?: string
           phone?: string
           rating?: string
           responsavel?: string
@@ -70,6 +74,8 @@ export type Database = {
           instagram?: string
           meeting_dates?: string[]
           name?: string
+          nome_decisor?: string
+          numero_decisor?: string
           phone?: string
           rating?: string
           responsavel?: string
