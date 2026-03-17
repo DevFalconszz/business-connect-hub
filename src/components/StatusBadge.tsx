@@ -2,9 +2,12 @@ import { LeadStatus } from '@/lib/types';
 
 const config: Record<LeadStatus, { label: string; bg: string; text: string } | null> = {
   none: null,
-  avaliando: { label: 'Avaliando', bg: 'bg-status-evaluating', text: 'text-status-evaluating-text' },
-  conversando: { label: 'Conversando', bg: 'bg-status-talking', text: 'text-status-talking-text' },
-  reuniao_marcada: { label: 'Reunião Marcada', bg: 'bg-status-meeting', text: 'text-status-meeting-text' },
+  analise_pendente: { label: 'Análise Pendente', bg: 'bg-status-pending', text: 'text-status-pending-text' },
+  em_analise: { label: 'Em Análise', bg: 'bg-status-analyzing', text: 'text-status-analyzing-text' },
+  follow_up: { label: 'Follow Up', bg: 'bg-status-followup', text: 'text-status-followup-text' },
+  reuniao_agendada: { label: 'Reunião Agendada', bg: 'bg-status-meeting', text: 'text-status-meeting-text' },
+  recusado: { label: 'Recusado', bg: 'bg-status-refused', text: 'text-status-refused-text' },
+  venda_fechada: { label: 'Venda Fechada', bg: 'bg-status-closed', text: 'text-status-closed-text' },
 };
 
 export function StatusBadge({ status }: { status: LeadStatus }) {

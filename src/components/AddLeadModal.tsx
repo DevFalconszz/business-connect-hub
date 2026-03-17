@@ -13,18 +13,15 @@ interface Props {
 
 const fields = [
   { key: 'name', label: 'Nome *', required: true },
-  { key: 'title', label: 'Título' },
-  { key: 'category', label: 'Categoria' },
-  { key: 'address', label: 'Endereço', full: true },
+  { key: 'category', label: 'Nicho' },
   { key: 'city', label: 'Cidade' },
   { key: 'state', label: 'Estado' },
   { key: 'phone', label: 'Telefone' },
-  { key: 'website', label: 'Website', full: true },
-  { key: 'google_maps_url', label: 'Google Maps URL', full: true },
-  { key: 'rating', label: 'Rating' },
-  { key: 'reviews_count', label: 'Nº Avaliações' },
-  { key: 'instagram', label: 'Instagram' },
+  { key: 'nome_decisor', label: 'Nome Decisor' },
+  { key: 'numero_decisor', label: 'Número Decisor' },
   { key: 'responsavel', label: 'Pessoa Responsável' },
+  { key: 'website', label: 'Website', full: true },
+  { key: 'address', label: 'Endereço', full: true },
   { key: 'descricao', label: 'Descrição', full: true },
 ] as const;
 
@@ -35,23 +32,13 @@ export function AddLeadModal({ open, onClose, onAdd }: Props) {
     if (!form.name?.trim()) return;
     onAdd({
       id: crypto.randomUUID(),
-      name: form.name || '',
-      title: form.title || '',
-      category: form.category || '',
-      address: form.address || '',
-      city: form.city || '',
-      state: form.state || '',
-      phone: form.phone || '',
-      website: form.website || '',
-      google_maps_url: form.google_maps_url || '',
-      rating: form.rating || '',
-      reviews_count: form.reviews_count || '',
-      instagram: form.instagram || '',
-      responsavel: form.responsavel || '',
-      descricao: form.descricao || '',
-      status: 'none',
-      whatsapp_group: '',
-      meeting_dates: [],
+      name: form.name || '', title: '', category: form.category || '',
+      address: form.address || '', city: form.city || '', state: form.state || '',
+      phone: form.phone || '', website: form.website || '', google_maps_url: '',
+      rating: '', reviews_count: '', instagram: '',
+      responsavel: form.responsavel || '', descricao: form.descricao || '',
+      status: 'none', whatsapp_group: '', meeting_dates: [],
+      nome_decisor: form.nome_decisor || '', numero_decisor: form.numero_decisor || '',
     });
     setForm({});
     onClose();
@@ -67,17 +54,11 @@ export function AddLeadModal({ open, onClose, onAdd }: Props) {
           {fields.map(f => (
             <div key={f.key} className={'full' in f && f.full ? 'sm:col-span-2' : ''}>
               <Label className="text-xs text-muted-foreground">{f.label}</Label>
-              <Input
-                className="h-11 text-sm mt-1 rounded-xl"
-                value={form[f.key] || ''}
-                onChange={(e) => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-              />
+              <Input className="h-11 text-sm mt-1 rounded-xl" value={form[f.key] || ''} onChange={(e) => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
             </div>
           ))}
         </div>
-        <Button onClick={handleSubmit} className="w-full mt-4 h-12 rounded-xl text-base font-semibold">
-          Adicionar Empresa
-        </Button>
+        <Button onClick={handleSubmit} className="w-full mt-4 h-12 rounded-xl text-base font-semibold">Adicionar Empresa</Button>
       </DialogContent>
     </Dialog>
   );

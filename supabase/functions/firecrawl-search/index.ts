@@ -69,7 +69,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build a prompt with all results for AI extraction
     const resultsText = results.map((r: any, i: number) => {
       return `--- Result ${i + 1} ---
 URL: ${r.url || ''}
@@ -83,7 +82,7 @@ ${(r.markdown || '').substring(0, 1500)}
     const niche = options?.niche || '';
     const city = options?.city || '';
 
-    const aiPrompt = `Analise os seguintes resultados de busca e extraia informações estruturadas de cada estabelecimento/negócio encontrado.
+    const aiPrompt = `Analise os seguintes resultados de busca e extraia informações de cada estabelecimento/negócio.
 
 Nicho buscado: ${niche}
 Cidade buscada: ${city}
@@ -91,27 +90,31 @@ Cidade buscada: ${city}
 Para cada estabelecimento, extraia:
 - name: Nome do estabelecimento
 - title: Descrição curta ou slogan
-- category: Categoria/tipo do negócio (ex: Restaurante, Clínica, Salão de Beleza)
+- category: Categoria/nicho do negócio
 - city: Cidade
-- state: Estado (sigla UF, ex: SP, RJ, GO)
+- state: Estado (sigla UF)
 - phone: Telefone (formato brasileiro)
-- website: URL do site
-- rating: Nota/avaliação (ex: 4.5)
+- website: URL do site (string vazia se não tiver)
+- rating: Nota/avaliação
 - reviews_count: Número de avaliações
 - address: Endereço completo
 - instagram: @ do Instagram se encontrado
 - google_maps_url: Link do Google Maps se encontrado
+- has_website: boolean - true se o estabelecimento possui um site próprio funcional (não apenas redes sociais ou páginas de diretório)
+- has_ads: boolean - true se há evidência de anúncios pagos, campanhas de marketing digital ativas (Google Ads, Meta Ads, etc). Se não há menção a anúncios ou campanhas, coloque false.
+
+IMPORTANTE: Filtre e retorne APENAS estabelecimentos onde has_website=false OU has_ads=false. Ou seja, apenas aqueles que têm OPORTUNIDADE de melhoria em presença digital.
 
 Retorne APENAS um JSON array válido. Se um campo não for encontrado, use string vazia "".
-Não inclua estabelecimentos duplicados. Extraia o máximo de estabelecimentos distintos possível.
+Não inclua estabelecimentos duplicados.
 
 Resultados da busca:
 ${resultsText}
 
 Responda SOMENTE com o JSON array, sem markdown, sem explicação. Exemplo:
-[{"name":"Restaurante X","title":"Comida caseira","category":"Restaurante","city":"São Paulo","state":"SP","phone":"(11) 99999-9999","website":"https://...","rating":"4.5","reviews_count":"120","address":"Rua X, 123","instagram":"@restaurantex","google_maps_url":""}]`;
+[{"name":"Restaurante X","title":"Comida caseira","category":"Restaurante","city":"São Paulo","state":"SP","phone":"(11) 99999-9999","website":"","rating":"4.5","reviews_count":"120","address":"Rua X, 123","instagram":"@restaurantex","google_maps_url":"","has_website":false,"has_ads":false}]`;
 
-    console.log('Calling AI to extract structured data...');
+    console.log('Calling AI to extract and filter structured data...');
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -121,30 +124,18 @@ Responda SOMENTE com o JSON array, sem markdown, sem explicação. Exemplo:
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'user', content: aiPrompt }
-        ],
+        messages: [{ role: 'user', content: aiPrompt }],
         temperature: 0.1,
       }),
     });
 
     if (!aiResponse.ok) {
       console.error('AI gateway error:', aiResponse.status);
-      // Fallback: return raw results
       return new Response(
         JSON.stringify({ success: true, data: results.map((r: any) => ({
-          name: r.title || 'Sem nome',
-          title: r.description || '',
-          category: niche,
-          city: city,
-          state: '',
-          phone: '',
-          website: r.url || '',
-          rating: '',
-          reviews_count: '',
-          address: '',
-          instagram: '',
-          google_maps_url: '',
+          name: r.title || 'Sem nome', title: r.description || '', category: niche,
+          city: city, state: '', phone: '', website: r.url || '', rating: '', reviews_count: '',
+          address: '', instagram: '', google_maps_url: '', has_website: !!r.url, has_ads: false,
         })) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -152,8 +143,7 @@ Responda SOMENTE com o JSON array, sem markdown, sem explicação. Exemplo:
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || '[]';
-    
-    // Parse JSON from AI response (handle potential markdown wrapping)
+
     let parsed: any[];
     try {
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -163,10 +153,20 @@ Responda SOMENTE com o JSON array, sem markdown, sem explicação. Exemplo:
       parsed = [];
     }
 
-    console.log(`Extracted ${parsed.length} structured results`);
+    // Ensure boolean fields
+    parsed = parsed.map((p: any) => ({
+      ...p,
+      has_website: !!p.has_website,
+      has_ads: !!p.has_ads,
+    }));
+
+    // Double-check filter: only show opportunities (missing site OR missing ads)
+    const filtered = parsed.filter((p: any) => !p.has_website || !p.has_ads);
+
+    console.log(`Extracted ${parsed.length} results, ${filtered.length} opportunities after filter`);
 
     return new Response(
-      JSON.stringify({ success: true, data: parsed }),
+      JSON.stringify({ success: true, data: filtered }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

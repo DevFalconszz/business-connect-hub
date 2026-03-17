@@ -4,11 +4,10 @@ export function parseCSV(text: string): Lead[] {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
   
-  // Remove BOM
   const headerLine = lines[0].replace(/^\uFEFF/, '');
   const separator = headerLine.includes(';') ? ';' : ',';
   
-  return lines.slice(1).map((line, i) => {
+  return lines.slice(1).map((line) => {
     const cols = line.split(separator);
     return {
       id: crypto.randomUUID(),
@@ -29,6 +28,8 @@ export function parseCSV(text: string): Lead[] {
       status: 'none' as const,
       whatsapp_group: '',
       meeting_dates: [],
+      nome_decisor: '',
+      numero_decisor: '',
     };
   }).filter(l => l.name);
 }
