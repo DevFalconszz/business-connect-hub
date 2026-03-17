@@ -1,4 +1,4 @@
-export type LeadStatus = 'none' | 'avaliando' | 'conversando' | 'reuniao_marcada';
+export type LeadStatus = 'none' | 'analise_pendente' | 'em_analise' | 'follow_up' | 'reuniao_agendada' | 'recusado' | 'venda_fechada';
 
 export interface Lead {
   id: string;
@@ -18,5 +18,7 @@ export interface Lead {
   descricao: string;
   status: LeadStatus;
   whatsapp_group: string;
-  meeting_dates: string[]; // ISO date strings
+  meeting_dates: string[];
+  nome_decisor: string;
+  numero_decisor: string;
 }

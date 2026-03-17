@@ -37,15 +37,29 @@
     --radius: 0.75rem;
 
     /* Status colors */
-    --status-evaluating: 45 93% 89%;
-    --status-evaluating-text: 32 81% 29%;
-    --status-evaluating-border: 45 80% 72%;
-    --status-talking: 214 95% 93%;
-    --status-talking-text: 217 91% 40%;
-    --status-talking-border: 214 80% 72%;
+    --status-pending: 45 93% 89%;
+    --status-pending-text: 32 81% 29%;
+    --status-pending-border: 45 80% 72%;
+
+    --status-analyzing: 214 95% 93%;
+    --status-analyzing-text: 217 91% 40%;
+    --status-analyzing-border: 214 80% 72%;
+
+    --status-followup: 27 96% 90%;
+    --status-followup-text: 21 80% 32%;
+    --status-followup-border: 27 80% 65%;
+
     --status-meeting: 149 80% 90%;
     --status-meeting-text: 160 84% 25%;
     --status-meeting-border: 149 60% 60%;
+
+    --status-refused: 0 86% 93%;
+    --status-refused-text: 0 72% 40%;
+    --status-refused-border: 0 70% 65%;
+
+    --status-closed: 142 76% 90%;
+    --status-closed-text: 142 64% 24%;
+    --status-closed-border: 142 60% 50%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -73,13 +87,11 @@
   }
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Better touch targets */
 @media (max-width: 768px) {
   input, select, button, textarea {
     font-size: 16px !important;
