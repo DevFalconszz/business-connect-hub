@@ -31,19 +31,21 @@ const Index = () => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const text = ev.target?.result as string;
-      const parsed = parseCSV(text);
+    const { leads: parsed, errors, totalRows } = await parseFile(file);
+    if (errors.length > 0) {
+      errors.forEach(err => toast.error(err, { duration: 8000 }));
+    }
+    if (parsed.length === 0 && totalRows > 0) {
+      toast.error('Nenhum lead válido encontrado no arquivo.');
+    } else if (parsed.length > 0) {
       const inserted = await insertLeads(parsed);
       if (inserted.length > 0) {
         setLeads(prev => [...inserted, ...prev]);
-        toast.success(`${inserted.length} leads importados com sucesso!`);
+        toast.success(`${inserted.length} de ${totalRows} leads importados com sucesso!`);
       } else {
-        toast.error('Erro ao importar leads.');
+        toast.error('Erro ao salvar leads no banco de dados.');
       }
-    };
-    reader.readAsText(file);
+    }
     e.target.value = '';
   };
 
