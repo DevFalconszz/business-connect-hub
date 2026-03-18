@@ -98,7 +98,7 @@ const Index = () => {
               <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className="h-11 w-11 p-0 rounded-xl" onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
               <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className="h-11 w-11 p-0 rounded-xl" onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
             </div>
-            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleUpload} />
+            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleUpload} />
             <Button variant="outline" className="h-11 rounded-xl px-4 text-sm" onClick={() => fileRef.current?.click()}>
               <Upload className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Upload</span><span className="sm:hidden">CSV</span>
             </Button>
