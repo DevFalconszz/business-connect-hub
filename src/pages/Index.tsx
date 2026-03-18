@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead } from '@/lib/types';
-import { parseCSV } from '@/lib/csv-parser';
+import { parseFile } from '@/lib/csv-parser';
 import { loadLeads, insertLead, insertLeads, updateLead, deleteLead } from '@/lib/leads-store';
 import { LeadsTable } from '@/components/LeadsTable';
 import { LeadCard } from '@/components/LeadCard';
@@ -31,19 +31,21 @@ const Index = () => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const text = ev.target?.result as string;
-      const parsed = parseCSV(text);
+    const { leads: parsed, errors, totalRows } = await parseFile(file);
+    if (errors.length > 0) {
+      errors.forEach(err => toast.error(err, { duration: 8000 }));
+    }
+    if (parsed.length === 0 && totalRows > 0) {
+      toast.error('Nenhum lead válido encontrado no arquivo.');
+    } else if (parsed.length > 0) {
       const inserted = await insertLeads(parsed);
       if (inserted.length > 0) {
         setLeads(prev => [...inserted, ...prev]);
-        toast.success(`${inserted.length} leads importados com sucesso!`);
+        toast.success(`${inserted.length} de ${totalRows} leads importados com sucesso!`);
       } else {
-        toast.error('Erro ao importar leads.');
+        toast.error('Erro ao salvar leads no banco de dados.');
       }
-    };
-    reader.readAsText(file);
+    }
     e.target.value = '';
   };
 
@@ -96,7 +98,7 @@ const Index = () => {
               <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className="h-11 w-11 p-0 rounded-xl" onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
               <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className="h-11 w-11 p-0 rounded-xl" onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
             </div>
-            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleUpload} />
+            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleUpload} />
             <Button variant="outline" className="h-11 rounded-xl px-4 text-sm" onClick={() => fileRef.current?.click()}>
               <Upload className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Upload</span><span className="sm:hidden">CSV</span>
             </Button>
