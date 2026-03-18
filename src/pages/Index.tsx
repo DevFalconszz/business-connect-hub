@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead } from '@/lib/types';
-import { parseCSV } from '@/lib/csv-parser';
+import { parseFile } from '@/lib/csv-parser';
 import { loadLeads, insertLead, insertLeads, updateLead, deleteLead } from '@/lib/leads-store';
 import { LeadsTable } from '@/components/LeadsTable';
 import { LeadCard } from '@/components/LeadCard';
