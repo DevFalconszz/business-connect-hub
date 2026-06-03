@@ -18,11 +18,23 @@ export default {
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
+        gold: {
+          50: '#FFFDF0',
+          100: '#FFF9D4',
+          200: '#FFF099',
+          300: '#FFE65E',
+          400: '#FFDD33',
+          500: '#F5A623',
+          600: '#D4A017',
+          700: '#B8860B',
+          800: '#8B6914',
+          900: '#6B4F12',
+        },
         status: {
-          evaluating: "hsl(var(--status-evaluating))",
-          "evaluating-text": "hsl(var(--status-evaluating-text))",
-          talking: "hsl(var(--status-talking))",
-          "talking-text": "hsl(var(--status-talking-text))",
+          evaluating: "hsl(var(--status-pending))",
+          "evaluating-text": "hsl(var(--status-pending-text))",
+          talking: "hsl(var(--status-analyzing))",
+          "talking-text": "hsl(var(--status-analyzing-text))",
           meeting: "hsl(var(--status-meeting))",
           "meeting-text": "hsl(var(--status-meeting-text))",
         },
@@ -77,20 +89,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {

@@ -8,12 +8,12 @@ interface Props {
 
 const statusStyles: Record<string, string> = {
   none: '',
-  analise_pendente: 'bg-[hsl(var(--status-pending))] text-[hsl(var(--status-pending-text))]',
-  em_analise: 'bg-[hsl(var(--status-analyzing))] text-[hsl(var(--status-analyzing-text))]',
-  follow_up: 'bg-[hsl(var(--status-followup))] text-[hsl(var(--status-followup-text))]',
-  reuniao_agendada: 'bg-[hsl(var(--status-meeting))] text-[hsl(var(--status-meeting-text))]',
-  recusado: 'bg-[hsl(var(--status-refused))] text-[hsl(var(--status-refused-text))]',
-  venda_fechada: 'bg-[hsl(var(--status-closed))] text-[hsl(var(--status-closed-text))]',
+  analise_pendente: 'bg-gold-100 text-gold-800',
+  em_analise: 'bg-gold-100 text-gold-800',
+  follow_up: 'bg-gold-100 text-gold-800',
+  reuniao_agendada: 'bg-gold-100 text-gold-800',
+  recusado: 'bg-red-100 text-red-800',
+  venda_fechada: 'bg-gold-100 text-gold-800',
 };
 
 export function StatusSelect({ value, onChange }: Props) {
@@ -24,12 +24,12 @@ export function StatusSelect({ value, onChange }: Props) {
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="none">Sem status</SelectItem>
-        <SelectItem value="analise_pendente">🟡 Análise Pendente</SelectItem>
-        <SelectItem value="em_analise">🔵 Em Análise</SelectItem>
-        <SelectItem value="follow_up">🟠 Follow Up</SelectItem>
-        <SelectItem value="reuniao_agendada">🟢 Reunião Agendada</SelectItem>
-        <SelectItem value="recusado">🔴 Recusado</SelectItem>
-        <SelectItem value="venda_fechada">✅ Venda Fechada</SelectItem>
+        <SelectItem value="analise_pendente">An\u00e1lise Pendente</SelectItem>
+        <SelectItem value="em_analise">Em An\u00e1lise</SelectItem>
+        <SelectItem value="follow_up">Follow Up</SelectItem>
+        <SelectItem value="reuniao_agendada">Reuni\u00e3o Agendada</SelectItem>
+        <SelectItem value="recusado">Recusado</SelectItem>
+        <SelectItem value="venda_fechada">Venda Fechada</SelectItem>
       </SelectContent>
     </Select>
   );

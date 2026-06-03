@@ -11,6 +11,7 @@ import { AddLeadModal } from '@/components/AddLeadModal';
 import { Upload, Plus, Search, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { detectEnv } from '@/lib/env-check';
 
 const Index = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -25,7 +26,9 @@ const Index = () => {
   useEffect(() => { if (isMobile) setViewMode('cards'); }, [isMobile]);
 
   useEffect(() => {
-    loadLeads().then(data => { setLeads(data); setLoading(false); });
+    detectEnv().then(() => {
+      loadLeads().then(data => { setLeads(data); setLoading(false); });
+    });
   }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,33 +89,33 @@ const Index = () => {
   }, [leads, search]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b bg-card/50">
+    <div className="min-h-screen bg-white">
+      <div className="border-b border-gray-100 bg-white/80">
         <div className="max-w-[1600px] mx-auto px-4 py-3">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input className="pl-10 h-11 text-sm rounded-xl" placeholder="Buscar por nome, cidade, decisor, responsável..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input className="pl-10 h-11 text-sm rounded-xl border-gray-200 focus:border-gold-500 focus:ring-gold-500" placeholder="Buscar por nome, cidade, decisor, responsável..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div className="flex gap-2">
-              <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className="h-11 w-11 p-0 rounded-xl" onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
-              <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className="h-11 w-11 p-0 rounded-xl" onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
+              <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'cards' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
+              <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'table' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
             </div>
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleUpload} />
-            <Button variant="outline" className="h-11 rounded-xl px-4 text-sm" onClick={() => fileRef.current?.click()}>
+            <Button variant="outline" className="h-11 rounded-xl px-4 text-sm border-gray-200 hover:border-gold-500 hover:text-gold-700" onClick={() => fileRef.current?.click()}>
               <Upload className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Upload</span><span className="sm:hidden">CSV</span>
             </Button>
-            <Button className="h-11 rounded-xl px-4 text-sm" onClick={() => setShowAdd(true)}>
+            <Button className="h-11 rounded-xl px-4 text-sm bg-black text-white hover:bg-gray-900" onClick={() => setShowAdd(true)}>
               <Plus className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Adicionar</span><span className="sm:hidden">Novo</span>
             </Button>
-            <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">{leads.length} leads</span>
+            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{leads.length} leads</span>
           </div>
         </div>
       </div>
 
       <main className="max-w-[1600px] mx-auto px-4 py-4">
         {loading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-gray-400" /></div>
         ) : viewMode === 'table' ? (
           <LeadsTable leads={filtered} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} onDeleteLead={handleDeleteLead} />
         ) : (
@@ -121,8 +124,8 @@ const Index = () => {
               <LeadCard key={lead.id} lead={lead} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} onDeleteLead={handleDeleteLead} />
             ))}
             {filtered.length === 0 && (
-              <div className="col-span-full text-center py-16 text-muted-foreground">
-                <p className="text-lg font-medium">Nenhum lead encontrado</p>
+              <div className="col-span-full text-center py-16 text-gray-400">
+                <p className="text-lg font-medium text-gray-700">Nenhum lead encontrado</p>
                 <p className="text-sm mt-1">Faça upload de uma planilha ou adicione manualmente.</p>
               </div>
             )}

@@ -6,69 +6,107 @@
 
 @layer base {
   :root {
-    --background: 220 14% 96%;
-    --foreground: 224 28% 12%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 28% 12%;
+    --card-foreground: 0 0% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 28% 12%;
+    --popover-foreground: 0 0% 4%;
 
-    --primary: 236 72% 58%;
+    --primary: 42 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 94%;
-    --secondary-foreground: 224 28% 12%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 4%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 236 72% 96%;
-    --accent-foreground: 236 72% 42%;
+    --accent: 42 100% 95%;
+    --accent-foreground: 42 100% 35%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 236 72% 58%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 42 100% 50%;
 
     --radius: 0.75rem;
 
-    /* Status colors */
-    --status-pending: 45 93% 89%;
-    --status-pending-text: 32 81% 29%;
-    --status-pending-border: 45 80% 72%;
+    --status-pending: 42 100% 89%;
+    --status-pending-text: 42 100% 25%;
+    --status-pending-border: 42 100% 72%;
 
-    --status-analyzing: 214 95% 93%;
-    --status-analyzing-text: 217 91% 40%;
-    --status-analyzing-border: 214 80% 72%;
+    --status-analyzing: 42 100% 89%;
+    --status-analyzing-text: 42 100% 25%;
+    --status-analyzing-border: 42 100% 72%;
 
-    --status-followup: 27 96% 90%;
-    --status-followup-text: 21 80% 32%;
-    --status-followup-border: 27 80% 65%;
+    --status-followup: 42 100% 89%;
+    --status-followup-text: 42 100% 25%;
+    --status-followup-border: 42 100% 72%;
 
-    --status-meeting: 149 80% 90%;
-    --status-meeting-text: 160 84% 25%;
-    --status-meeting-border: 149 60% 60%;
+    --status-meeting: 42 100% 89%;
+    --status-meeting-text: 42 100% 25%;
+    --status-meeting-border: 42 100% 72%;
 
-    --status-refused: 0 86% 93%;
+    --status-refused: 0 72% 93%;
     --status-refused-text: 0 72% 40%;
     --status-refused-border: 0 70% 65%;
 
-    --status-closed: 142 76% 90%;
-    --status-closed-text: 142 64% 24%;
-    --status-closed-border: 142 60% 50%;
+    --status-closed: 42 100% 89%;
+    --status-closed-text: 42 100% 25%;
+    --status-closed-border: 42 100% 72%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 236 72% 58%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 42 100% 50%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 42 100% 50%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 42 100% 50%;
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 96%;
+
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 96%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 42 100% 50%;
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 42 100% 8%;
+    --accent-foreground: 42 100% 60%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 42 100% 50%;
+
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 42 100% 50%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 42 100% 50%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 42 100% 50%;
   }
 }
 
