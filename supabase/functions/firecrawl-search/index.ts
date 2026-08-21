@@ -1,7 +1,234 @@
+/**
+ * Business Connect Hub - Firecrawl Search (Real Verification)
+ * 
+ * Esta Edge Function busca estabelecimentos usando Firecrawl e faz
+ * verificações REAIS em vez de depender de IA:
+ * 
+ * 1. Busca estabelecimentos via Firecrawl
+ * 2. Para cada resultado:
+ *    - Verifica se o site existe (HTTP HEAD/GET)
+ *    - Analisa código-fonte para detectar Google Ads
+ *    - Verifica Meta Ad Library (se configurado)
+ * 3. Retorna apenas leads com oportunidade
+ */
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// ============================================================
+// VERIFICADOR DE SITE - Verifica se o site existe via HTTP
+// ============================================================
+
+interface SiteCheckResult {
+  exists: boolean;
+  http_alive: boolean;
+  status_code: number;
+  domain: string;
+}
+
+async function checkWebsite(url: string): Promise<SiteCheckResult> {
+  const empty: SiteCheckResult = {
+    exists: false,
+    http_alive: false,
+    status_code: 0,
+    domain: '',
+  };
+
+  if (!url || !url.trim()) return empty;
+
+  // Extrai domínio
+  let domain = '';
+  try {
+    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    domain = urlObj.hostname;
+  } catch {
+    return empty;
+  }
+
+  // Tenta HTTP HEAD primeiro (mais rápido)
+  try {
+    const response = await fetch(url.startsWith('http') ? url : `https://${url}`, {
+      method: 'HEAD',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(5000),
+    });
+
+    return {
+      exists: response.status < 400,
+      http_alive: response.status < 400,
+      status_code: response.status,
+      domain,
+    };
+  } catch {
+    // Se HEAD falhou, tenta GET
+    try {
+      const response = await fetch(url.startsWith('http') ? url : `https://${url}`, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(8000),
+      });
+
+      return {
+        exists: response.status < 400,
+        http_alive: response.status < 400,
+        status_code: response.status,
+        domain,
+      };
+    } catch {
+      return empty;
+    }
+  }
+}
+
+// ============================================================
+// DETECTOR DE ADS - Analisa código-fonte para Google Ads
+// ============================================================
+
+interface AdsDetectionResult {
+  has_google_ads: boolean;
+  has_google_tag_manager: boolean;
+  has_google_analytics: boolean;
+  has_meta_pixel: boolean;
+  has_microsoft_ads: boolean;
+  confidence: number;
+}
+
+// Padrões regex para detecção de ads
+const ADS_PATTERNS = {
+  google_ads: [
+    /google[\._/]?ads/gi,
+    /googlesyndication\.com/gi,
+    /googleadservices\.com/gi,
+    /pagead2\.googlesyndication/gi,
+    /adsbygoogle/gi,
+    /ca-pub-\d+/gi,
+    /data-ad-client/gi,
+    /data-ad-slot/gi,
+  ],
+  google_tag_manager: [
+    /googletagmanager\.com/gi,
+    /GTM-[A-Z0-9]+/g,
+    /gtag\(/g,
+  ],
+  google_analytics: [
+    /google-analytics\.com/gi,
+    /analytics\.js/gi,
+    /gtag\.js/gi,
+    /UA-\d+-\d+/g,
+    /G-[A-Z0-9]+/g,
+  ],
+  meta_pixel: [
+    /facebook\.net\/en_US\/fbevents/gi,
+    /fbq\(/g,
+    /pixel\.facebook\.com/gi,
+    /connect\.facebook\.net/gi,
+  ],
+  microsoft_ads: [
+    /bat\.bing\.com/gi,
+    /clarity\.ms/gi,
+  ],
+};
+
+async function detectGoogleAds(url: string): Promise<AdsDetectionResult> {
+  const empty: AdsDetectionResult = {
+    has_google_ads: false,
+    has_google_tag_manager: false,
+    has_google_analytics: false,
+    has_meta_pixel: false,
+    has_microsoft_ads: false,
+    confidence: 0,
+  };
+
+  if (!url) return empty;
+
+  try {
+    const response = await fetch(url.startsWith('http') ? url : `https://${url}`, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (response.status >= 400) return empty;
+
+    const html = await response.text();
+
+    // Verifica cada categoria de padrão
+    const results: Record<string, boolean> = {};
+    for (const [category, patterns] of Object.entries(ADS_PATTERNS)) {
+      results[category] = patterns.some(pattern => pattern.test(html));
+    }
+
+    // Calcula confiança
+    let confidence = 0;
+    if (results.google_ads) confidence += 0.5;
+    if (results.google_tag_manager) confidence += 0.2;
+    if (results.google_analytics) confidence += 0.1;
+    if (results.meta_pixel) confidence += 0.1;
+    if (results.microsoft_ads) confidence += 0.1;
+
+    return {
+      has_google_ads: results.google_ads || false,
+      has_google_tag_manager: results.google_tag_manager || false,
+      has_google_analytics: results.google_analytics || false,
+      has_meta_pixel: results.meta_pixel || false,
+      has_microsoft_ads: results.microsoft_ads || false,
+      confidence: Math.min(confidence, 1),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+// ============================================================
+// META AD LIBRARY - Verifica anúncios no Facebook/Instagram
+// ============================================================
+
+interface MetaAdResult {
+  has_active_ads: boolean;
+  ads_count: number;
+}
+
+async function checkMetaAds(businessName: string): Promise<MetaAdResult> {
+  const accessToken = Deno.env.get('META_ACCESS_TOKEN');
+
+  if (!accessToken) {
+    return { has_active_ads: false, ads_count: 0 };
+  }
+
+  try {
+    const params = new URLSearchParams({
+      search_terms: businessName,
+      search_type: 'KEYWORD_UNORDERED',
+      ad_reached_countries: JSON.stringify(['BR']),
+      fields: 'id',
+      limit: '5',
+      access_token: accessToken,
+    });
+
+    const response = await fetch(
+      `https://graph.facebook.com/v19.0/ads_archive?${params}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+
+    if (!response.ok) {
+      return { has_active_ads: false, ads_count: 0 };
+    }
+
+    const data = await response.json();
+    const ads = data.data || [];
+
+    return {
+      has_active_ads: ads.length > 0,
+      ads_count: ads.length,
+    };
+  } catch {
+    return { has_active_ads: false, ads_count: 0 };
+  }
+}
+
+// ============================================================
+// MAIN HANDLER
+// ============================================================
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,15 +253,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'AI gateway not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const niche = options?.niche || '';
+    const city = options?.city || '';
 
-    console.log('Searching:', query);
+    console.log(`🔍 Searching: ${query}`);
+
+    // ============================================
+    // 1. BUSCA NO FIRECRAWL
+    // ============================================
 
     const response = await fetch('https://api.firecrawl.dev/v1/search', {
       method: 'POST',
@@ -54,7 +280,7 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Firecrawl API error:', data);
+      console.error('❌ Firecrawl API error:', data);
       return new Response(
         JSON.stringify({ success: false, error: data.error || `Request failed with status ${response.status}` }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -69,108 +295,98 @@ Deno.serve(async (req) => {
       );
     }
 
-    const resultsText = results.map((r: any, i: number) => {
-      return `--- Result ${i + 1} ---
-URL: ${r.url || ''}
-Title: ${r.title || ''}
-Description: ${r.description || ''}
-Content:
-${(r.markdown || '').substring(0, 1500)}
-`;
-    }).join('\n');
+    console.log(`📊 Found ${results.length} results from Firecrawl`);
 
-    const niche = options?.niche || '';
-    const city = options?.city || '';
+    // ============================================
+    // 2. EXTRAI INFORMAÇÕES BÁSICAS DOS RESULTADOS
+    // ============================================
 
-    const aiPrompt = `Analise os seguintes resultados de busca e extraia informações de cada estabelecimento/negócio.
+    // Tenta extrair informações dos resultados do Firecrawl
+    // sem depender de IA - usa regex e parsing simples
+    const leads: any[] = [];
 
-Nicho buscado: ${niche}
-Cidade buscada: ${city}
+    for (const result of results) {
+      const url = result.url || '';
+      const title = result.title || '';
+      const description = result.description || '';
+      const markdown = result.markdown || '';
 
-Para cada estabelecimento, extraia:
-- name: Nome do estabelecimento
-- title: Descrição curta ou slogan
-- category: Categoria/nicho do negócio
-- city: Cidade
-- state: Estado (sigla UF)
-- phone: Telefone (formato brasileiro)
-- website: URL do site (string vazia se não tiver)
-- rating: Nota/avaliação
-- reviews_count: Número de avaliações
-- address: Endereço completo
-- instagram: @ do Instagram se encontrado
-- google_maps_url: Link do Google Maps se encontrado
-- has_website: boolean - true se o estabelecimento possui um site próprio funcional (não apenas redes sociais ou páginas de diretório)
-- has_ads: boolean - true se há evidência de anúncios pagos, campanhas de marketing digital ativas (Google Ads, Meta Ads, etc). Se não há menção a anúncios ou campanhas, coloque false.
+      // Extrai informações básicas usando regex do conteúdo
+      const phoneMatch = markdown.match(/(?:\+\d{2}\s?)?\(?\d{2}\)?\s?\d{4,5}[\-\s]?\d{4}/);
+      const emailMatch = markdown.match(/[\w.-]+@[\w.-]+\.\w+/);
+      const instagramMatch = markdown.match(/@[\w.]+|instagram\.com\/[\w.]+/);
 
-IMPORTANTE: Filtre e retorne APENAS estabelecimentos onde has_website=false OU has_ads=false. Ou seja, apenas aqueles que têm OPORTUNIDADE de melhoria em presença digital.
+      // Monta o lead
+      const lead = {
+        name: title.split('|')[0].split('-')[0].trim() || description.substring(0, 50),
+        title: description.substring(0, 100),
+        category: niche,
+        address: '',
+        city: city,
+        state: options?.state || '',
+        phone: phoneMatch ? phoneMatch[0] : '',
+        website: url,
+        rating: '',
+        reviews_count: '',
+        instagram: instagramMatch ? instagramMatch[0] : '',
+        google_maps_url: '',
+        has_website: false,
+        has_ads: false,
+      };
 
-Retorne APENAS um JSON array válido. Se um campo não for encontrado, use string vazia "".
-Não inclua estabelecimentos duplicados.
-
-Resultados da busca:
-${resultsText}
-
-Responda SOMENTE com o JSON array, sem markdown, sem explicação. Exemplo:
-[{"name":"Restaurante X","title":"Comida caseira","category":"Restaurante","city":"São Paulo","state":"SP","phone":"(11) 99999-9999","website":"","rating":"4.5","reviews_count":"120","address":"Rua X, 123","instagram":"@restaurantex","google_maps_url":"","has_website":false,"has_ads":false}]`;
-
-    console.log('Calling AI to extract and filter structured data...');
-
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [{ role: 'user', content: aiPrompt }],
-        temperature: 0.1,
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      console.error('AI gateway error:', aiResponse.status);
-      return new Response(
-        JSON.stringify({ success: true, data: results.map((r: any) => ({
-          name: r.title || 'Sem nome', title: r.description || '', category: niche,
-          city: city, state: '', phone: '', website: r.url || '', rating: '', reviews_count: '',
-          address: '', instagram: '', google_maps_url: '', has_website: !!r.url, has_ads: false,
-        })) }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      leads.push(lead);
     }
 
-    const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || '[]';
+    console.log(`📋 Extracted ${leads.length} basic leads`);
 
-    let parsed: any[];
-    try {
-      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      parsed = JSON.parse(cleanContent);
-    } catch {
-      console.error('Failed to parse AI response:', content.substring(0, 500));
-      parsed = [];
-    }
+    // ============================================
+    // 3. VERIFICAÇÕES REAIS EM PARALELO
+    // ============================================
 
-    // Ensure boolean fields
-    parsed = parsed.map((p: any) => ({
-      ...p,
-      has_website: !!p.has_website,
-      has_ads: !!p.has_ads,
-    }));
+    console.log('🔬 Running real verifications...');
 
-    // Double-check filter: only show opportunities (missing site OR missing ads)
-    const filtered = parsed.filter((p: any) => !p.has_website || !p.has_ads);
+    const verifiedLeads = await Promise.all(
+      leads.map(async (lead) => {
+        const verified = { ...lead };
 
-    console.log(`Extracted ${parsed.length} results, ${filtered.length} opportunities after filter`);
+        // 3a. Verifica se o site existe
+        if (lead.website) {
+          const siteCheck = await checkWebsite(lead.website);
+          verified.has_website = siteCheck.exists;
+
+          // 3b. Se o site existe, verifica se tem ads
+          if (siteCheck.exists) {
+            const adsCheck = await detectGoogleAds(lead.website);
+            verified.has_ads = adsCheck.has_google_ads;
+          }
+        }
+
+        // 3c. Verifica Meta Ad Library
+        const metaCheck = await checkMetaAds(lead.name);
+        if (metaCheck.has_active_ads) {
+          verified.has_ads = true;
+        }
+
+        return verified;
+      })
+    );
+
+    // ============================================
+    // 4. FILTRA: APENAS OPORTUNIDADES
+    // ============================================
+
+    const opportunities = verifiedLeads.filter(
+      (lead) => !lead.has_website || !lead.has_ads
+    );
+
+    console.log(`✅ ${opportunities.length} opportunities found (${verifiedLeads.length} total, ${verifiedLeads.length - opportunities.length} filtered out)`);
 
     return new Response(
-      JSON.stringify({ success: true, data: filtered }),
+      JSON.stringify({ success: true, data: opportunities.slice(0, 10) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error searching:', error);
+    console.error('❌ Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to search';
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
