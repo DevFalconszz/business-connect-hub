@@ -67,7 +67,7 @@ export default function ProfileScreen() {
           <View style={styles.sectionCard}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>App</Text>
-              <Text style={styles.infoValue}>CRM M.I.</Text>
+              <Text style={styles.infoValue}>CRM MI</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>

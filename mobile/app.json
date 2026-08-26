@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CRM M.I.",
+    "name": "CRM MI",
     "slug": "business-connect-hub",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -28,6 +28,12 @@
     "plugins": [
       "expo-router",
       "expo-splash-screen"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a87b4a9a-f721-4874-95c1-53910a6dec65"
+      }
+    }
   }
 }

@@ -56,7 +56,7 @@ export default function LoginScreen() {
             style={styles.logo}
             resizeMode="cover"
           />
-          <Text style={styles.brandName}>CRM M.I.</Text>
+          <Text style={styles.brandName}>CRM MI</Text>
           <Text style={styles.brandTagline}>Gestão de Leads</Text>
         </View>
 
