@@ -1,6 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ClipboardList, Radar, Zap } from 'lucide-react';
+import { ClipboardList, Radar, Zap, LogOut } from 'lucide-react';
 import { isLocal } from '@/lib/env-check';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const tabs = [
   { to: '/', label: 'Gestão de Leads', icon: ClipboardList },
@@ -9,6 +11,7 @@ const tabs = [
 
 export function AppHeader() {
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
   return (
     <header className="border-b bg-black text-white sticky top-0 z-30">
@@ -42,6 +45,18 @@ export function AppHeader() {
               );
             })}
           </nav>
+          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/20">
+            <span className="text-xs text-white/50 hidden sm:inline">{user?.email}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="text-white/70 hover:text-white hover:bg-white/10 h-9 px-3"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1">Sair</span>
+            </Button>
+          </div>
         </div>
       </div>
     </header>
