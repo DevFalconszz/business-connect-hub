@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { insertLead } from '../../lib/leads-store';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Colors, Font, Radius, Spacing } from '../../lib/theme';
+import { useCRMAlert } from '../../lib/crm-alert';
 
 interface SearchResult {
   name: string;
@@ -37,10 +37,11 @@ export default function ProspectingScreen() {
   const [loading, setLoading] = useState(false);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
   const [responsavel, setResponsavel] = useState('');
+  const { showAlert, AlertModal } = useCRMAlert();
 
   const handleSearch = async () => {
     if (!niche.trim() || !city.trim()) {
-      Alert.alert('Erro', 'Preencha o nicho e a cidade.');
+      showAlert('Erro', 'Preencha o nicho e a cidade.');
       return;
     }
 
@@ -54,18 +55,18 @@ export default function ProspectingScreen() {
 
       if (error) {
         console.error('Edge Function error:', error);
-        Alert.alert('Erro', error.message || 'Não foi possível buscar leads.');
+        showAlert('Erro', error.message || 'Não foi possível buscar leads.');
         return;
       }
 
       if (data?.success && data?.data) {
         setResults(data.data);
       } else {
-        Alert.alert('Erro', data?.error || 'Não foi possível buscar leads.');
+        showAlert('Erro', data?.error || 'Não foi possível buscar leads.');
       }
     } catch (error) {
       console.error('Search error:', error);
-      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+      showAlert('Erro', 'Não foi possível conectar ao servidor.');
     } finally {
       setLoading(false);
     }
@@ -73,7 +74,7 @@ export default function ProspectingScreen() {
 
   const handleAddLead = async (result: SearchResult) => {
     if (!responsavel.trim()) {
-      Alert.alert('Erro', 'Informe o nome do responsável.');
+      showAlert('Erro', 'Informe o nome do responsável.');
       return;
     }
 
@@ -101,11 +102,11 @@ export default function ProspectingScreen() {
 
     const inserted = await insertLead(lead);
     if (inserted) {
-      Alert.alert('Sucesso', `"${result.name}" adicionado aos leads!`);
+      showAlert('Sucesso', `"${result.name}" adicionado aos leads!`);
       setAddingIndex(null);
       setResponsavel('');
     } else {
-      Alert.alert('Erro', 'Não foi possível adicionar o lead.');
+      showAlert('Erro', 'Não foi possível adicionar o lead.');
     }
   };
 
@@ -145,6 +146,7 @@ export default function ProspectingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertModal />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Prospectar</Text>
         <Text style={styles.headerSubtitle}>Encontre novos leads</Text>

@@ -7,7 +7,6 @@ import {
   StyleSheet,
   RefreshControl,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,6 +14,7 @@ import { Lead, STATUS_LABELS, STATUS_COLORS } from '../../lib/types';
 import { loadLeads, deleteLead } from '../../lib/leads-store';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Font, Radius, Spacing, Shadow } from '../../lib/theme';
+import { useCRMAlert } from '../../lib/crm-alert';
 
 export default function LeadsScreen() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function LeadsScreen() {
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { showAlert, AlertModal } = useCRMAlert();
 
   const fetchLeads = useCallback(async () => {
     const data = await loadLeads();
@@ -41,7 +42,7 @@ export default function LeadsScreen() {
   }, [fetchLeads]);
 
   const handleDelete = useCallback((id: string, name: string) => {
-    Alert.alert('Excluir Lead', `Tem certeza que deseja excluir "${name}"?`, [
+    showAlert('Excluir Lead', `Tem certeza que deseja excluir "${name}"?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir',
@@ -52,7 +53,7 @@ export default function LeadsScreen() {
         },
       },
     ]);
-  }, []);
+  }, [showAlert]);
 
   const filtered = search.trim()
     ? leads.filter(
@@ -110,6 +111,7 @@ export default function LeadsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertModal />
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Leads</Text>

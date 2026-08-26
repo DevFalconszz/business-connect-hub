@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Linking,
 } from 'react-native';
@@ -15,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Lead, STATUS_LABELS, STATUS_COLORS, LeadStatus } from '../../lib/types';
 import { loadLeads, updateLead } from '../../lib/leads-store';
 import { Colors, Font, Radius, Spacing } from '../../lib/theme';
+import { useCRMAlert } from '../../lib/crm-alert';
 
 const STATUSES: LeadStatus[] = [
   'none', 'analise_pendente', 'em_analise', 'follow_up',
@@ -29,6 +29,7 @@ export default function LeadDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState<Partial<Lead>>({});
   const [newDate, setNewDate] = useState('');
+  const { showAlert, AlertModal } = useCRMAlert();
 
   useEffect(() => {
     loadLeads().then(data => {
@@ -49,28 +50,28 @@ export default function LeadDetailScreen() {
     setSaving(false);
     if (ok) {
       setLead(updated);
-      Alert.alert('Sucesso', 'Lead atualizado!');
+      showAlert('Sucesso', 'Lead atualizado!');
     } else {
-      Alert.alert('Erro', 'Não foi possível salvar.');
+      showAlert('Erro', 'Não foi possível salvar.');
     }
   };
 
   const handleAddDate = () => {
     const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
     if (!dateRegex.test(newDate)) {
-      Alert.alert('Erro', 'Formato de data inválido. Use DD/MM/AAAA.');
+      showAlert('Erro', 'Formato de data inválido. Use DD/MM/AAAA.');
       return;
     }
     const [day, month, year] = newDate.split('/');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     if (isNaN(date.getTime())) {
-      Alert.alert('Erro', 'Data inválida.');
+      showAlert('Erro', 'Data inválida.');
       return;
     }
     const dateStr = date.toISOString();
     const currentDates = editData.meeting_dates || [];
     if (currentDates.includes(dateStr)) {
-      Alert.alert('Erro', 'Esta data já foi adicionada.');
+      showAlert('Erro', 'Esta data já foi adicionada.');
       return;
     }
     setEditData(prev => ({ ...prev, meeting_dates: [...currentDates, dateStr] }));
@@ -126,10 +127,11 @@ export default function LeadDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertModal />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
-            <Text style={styles.backIcon}>←</Text>
+            <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <TextInput
@@ -403,7 +405,9 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     color: Colors.text.primary,
-    fontSize: 20,
+    fontSize: 24,
+    fontWeight: Font.weight.semibold,
+    marginLeft: -2,
   },
   headerInfo: {
     flex: 1,

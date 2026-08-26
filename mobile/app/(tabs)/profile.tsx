@@ -4,18 +4,19 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Font, Radius, Spacing } from '../../lib/theme';
+import { useCRMAlert } from '../../lib/crm-alert';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const { showAlert, AlertModal } = useCRMAlert();
 
   const handleSignOut = () => {
-    Alert.alert('Sair', 'Tem certeza que deseja sair da sua conta?', [
+    showAlert('Sair', 'Tem certeza que deseja sair da sua conta?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sair', style: 'destructive', onPress: signOut },
     ]);
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertModal />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Perfil</Text>
       </View>

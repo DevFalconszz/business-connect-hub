@@ -8,19 +8,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
   Image,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Font, Radius, Spacing } from '../lib/theme';
+import { useCRMAlert } from '../lib/crm-alert';
 
 export default function LoginScreen() {
   const { signIn, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { showAlert, AlertModal } = useCRMAlert();
 
   if (user) {
     return <Redirect href="/(tabs)" />;
@@ -28,7 +29,7 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Erro', 'Preencha email e senha.');
+      showAlert('Erro', 'Preencha email e senha.');
       return;
     }
 
@@ -36,7 +37,7 @@ export default function LoginScreen() {
     try {
       const { error } = await signIn(email.trim(), password);
       if (error) {
-        Alert.alert('Erro no login', error.message);
+        showAlert('Erro no login', error.message);
       }
     } finally {
       setLoading(false);
@@ -49,6 +50,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar style="light" />
+      <AlertModal />
       <View style={styles.inner}>
         <View style={styles.brandSection}>
           <Image
