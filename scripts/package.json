@@ -1,0 +1,7 @@
+{
+  "name": "lead-research-scripts",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}
