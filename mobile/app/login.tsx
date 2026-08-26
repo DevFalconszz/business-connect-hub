@@ -122,15 +122,16 @@ const styles = StyleSheet.create({
   },
   brandSection: {
     alignItems: 'center',
-    marginBottom: Spacing.xxxl,
+    marginBottom: Spacing.xxl,
+    marginTop: Spacing.xxl,
   },
   logo: {
-    width: 96,
-    height: 96,
+    width: 120,
+    height: 120,
     borderRadius: Radius.xxl,
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.lg,
     borderWidth: 2,
-    borderColor: Colors.primary[500] + '55',
+    borderColor: Colors.primary[500] + '44',
   },
   brandName: {
     fontSize: Font.size.h1,
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
   brandTagline: {
     fontSize: Font.size.bodySm,
     color: Colors.text.tertiary,
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
     letterSpacing: 0.3,
   },
   card: {
