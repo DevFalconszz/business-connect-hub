@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { Text, View, StyleSheet, Platform, StatusBar } from 'react-native';
+import { Text, View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Font, Radius, Spacing } from '../../lib/theme';
@@ -17,8 +17,8 @@ export default function TabLayout() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
-  const bottomPadding = Platform.OS === 'android'
-    ? Math.max(insets.bottom, 24)
+  const safeBottom = Platform.OS === 'android'
+    ? Math.max(insets.bottom, 20)
     : insets.bottom;
 
   if (!user) {
@@ -32,17 +32,17 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.primary[500],
         tabBarInactiveTintColor: Colors.text.tertiary,
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           backgroundColor: Colors.bg.surface,
           borderTopWidth: 0.5,
           borderTopColor: Colors.border.subtle,
-          height: 56 + bottomPadding,
-          paddingTop: Spacing.sm,
-          paddingBottom: bottomPadding,
+          height: 60 + safeBottom,
+          paddingTop: 8,
+          paddingBottom: safeBottom,
           elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
         },
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarHideOnKeyboard: true,

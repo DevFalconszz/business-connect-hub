@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
   resultCard: {
     backgroundColor: Colors.bg.surface,

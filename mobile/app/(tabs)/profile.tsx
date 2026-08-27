@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   profileCard: {
     alignItems: 'center',
