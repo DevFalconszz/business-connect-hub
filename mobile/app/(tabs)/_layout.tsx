@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Font, Radius, Spacing } from '../../lib/theme';
@@ -17,6 +17,10 @@ export default function TabLayout() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const bottomPadding = Platform.OS === 'android'
+    ? Math.max(insets.bottom, 24)
+    : insets.bottom;
+
   if (!user) {
     return <Redirect href="/login" />;
   }
@@ -31,10 +35,14 @@ export default function TabLayout() {
           backgroundColor: Colors.bg.surface,
           borderTopWidth: 0.5,
           borderTopColor: Colors.border.subtle,
+          height: 56 + bottomPadding,
           paddingTop: Spacing.sm,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-          height: 56 + (insets.bottom > 0 ? insets.bottom : 8),
-          elevation: 0,
+          paddingBottom: bottomPadding,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
         },
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarHideOnKeyboard: true,
@@ -66,13 +74,6 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Colors.bg.surface,
-    borderTopWidth: 0.5,
-    borderTopColor: Colors.border.subtle,
-    paddingTop: Spacing.sm,
-    elevation: 0,
-  },
   tabBarLabel: {
     fontSize: Font.size.mini,
     fontWeight: Font.weight.medium,
