@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./public/logo.svg" alt="Business Connect Hub" width="420" />
+<img src="./public/logo.png" alt="Business Connect Hub" width="420" />
 
 ### Plataforma CRM de Prospecção Inteligente com IA
 

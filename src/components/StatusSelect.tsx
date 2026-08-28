@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LeadStatus } from '@/lib/types';
+import { LeadStatus, STATUS_LABELS } from '@/lib/types';
 
 interface Props {
   value: LeadStatus;
@@ -16,6 +16,11 @@ const statusStyles: Record<string, string> = {
   venda_fechada: 'bg-gold-500/15 text-gold-400',
 };
 
+const STATUSES: LeadStatus[] = [
+  'none', 'analise_pendente', 'em_analise', 'follow_up',
+  'reuniao_agendada', 'recusado', 'venda_fechada',
+];
+
 export function StatusSelect({ value, onChange }: Props) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as LeadStatus)}>
@@ -23,13 +28,9 @@ export function StatusSelect({ value, onChange }: Props) {
         <SelectValue placeholder="Status" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="none">Sem status</SelectItem>
-        <SelectItem value="analise_pendente">An\u00e1lise Pendente</SelectItem>
-        <SelectItem value="em_analise">Em An\u00e1lise</SelectItem>
-        <SelectItem value="follow_up">Follow Up</SelectItem>
-        <SelectItem value="reuniao_agendada">Reuni\u00e3o Agendada</SelectItem>
-        <SelectItem value="recusado">Recusado</SelectItem>
-        <SelectItem value="venda_fechada">Venda Fechada</SelectItem>
+        {STATUSES.map((s) => (
+          <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );

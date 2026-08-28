@@ -54,9 +54,9 @@ export default function LoginScreen() {
       <View style={styles.inner}>
         <View style={styles.brandSection}>
           <Image
-            source={require('../assets/images/logo.jpeg')}
+            source={require('../assets/images/logo.png')}
             style={styles.logo}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           <Text style={styles.brandName}>CRM MI</Text>
           <Text style={styles.brandTagline}>Gestão de Leads</Text>
@@ -128,12 +128,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xxl,
   },
   logo: {
-    width: 120,
-    height: 120,
-    borderRadius: Radius.xxl,
+    width: 140,
+    height: 140,
     marginBottom: Spacing.lg,
-    borderWidth: 2,
-    borderColor: Colors.primary[500] + '44',
   },
   brandName: {
     fontSize: Font.size.h1,

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { StructuredResult } from '@/lib/opencode-api';
 import { searchLeadsLocal, isLocalServerRunning } from '@/lib/opencode-api';
 import { searchBusinesses } from '@/lib/firecrawl-api';
+import { detectAds } from '@/lib/detect-ads';
 import { insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff } from 'lucide-react';
@@ -27,6 +28,20 @@ export default function Prospecting() {
     isLocalServerRunning().then(running => setLocalMode(running));
   }, []);
 
+  const enrichWithAds = async (list: StructuredResult[]): Promise<StructuredResult[]> => {
+    try {
+      const map = await detectAds(
+        list.map((r) => ({ businessName: r.name, website: r.website }))
+      );
+      return list.map((r) => ({
+        ...r,
+        has_ads: map[r.website || r.name] ?? r.has_ads,
+      }));
+    } catch {
+      return list;
+    }
+  };
+
   const handleSearch = async () => {
     if (!niche.trim() || !city.trim()) {
       toast.error('Preencha o nicho e a cidade.');
@@ -38,7 +53,7 @@ export default function Prospecting() {
       if (localMode) {
         const res = await searchLeadsLocal(niche, city);
         if (res.success && res.data && res.data.length > 0) {
-          setResults(res.data);
+          setResults(await enrichWithAds(res.data));
           toast.success(`${res.data.length} resultados encontrados!`);
         } else {
           toast.error(res.error || 'Nenhum resultado encontrado.');
@@ -46,7 +61,7 @@ export default function Prospecting() {
       } else {
         const res = await searchBusinesses(niche, city);
         if (res.success && res.data && res.data.length > 0) {
-          setResults(res.data);
+          setResults(await enrichWithAds(res.data));
           if (res.message) {
             toast.warning(res.message);
           } else {

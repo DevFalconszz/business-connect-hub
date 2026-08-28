@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ClipboardList, Radar, Zap, LogOut } from 'lucide-react';
+import { ClipboardList, Radar, LogOut } from 'lucide-react';
 import { isLocal } from '@/lib/env-check';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ export function AppHeader() {
       <div className="max-w-[1600px] mx-auto px-4">
         <div className="flex items-center gap-6 h-14">
           <span className="text-lg font-bold text-gold-500 shrink-0 flex items-center gap-2">
-            <Zap className="w-5 h-5" />
+            <img src="/logo.png" alt="CRM MI" className="h-9 w-9 object-contain" />
             CRM MI
           </span>
           {isLocal() && (
