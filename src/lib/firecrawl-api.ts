@@ -26,7 +26,7 @@ export interface SearchResponse {
 }
 
 export async function searchBusinesses(niche: string, city: string): Promise<SearchResponse> {
-  const { data, error } = await supabase.functions.invoke<SearchResponse>('search-leads', {
+  const { data, error } = await supabase.functions.invoke<SearchResponse>('search-leads-web', {
     body: { niche: niche.trim(), city: city.trim() },
   });
 
