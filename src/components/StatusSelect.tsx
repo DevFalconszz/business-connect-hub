@@ -8,12 +8,12 @@ interface Props {
 
 const statusStyles: Record<string, string> = {
   none: '',
-  analise_pendente: 'bg-gold-100 text-gold-800',
-  em_analise: 'bg-gold-100 text-gold-800',
-  follow_up: 'bg-gold-100 text-gold-800',
-  reuniao_agendada: 'bg-gold-100 text-gold-800',
-  recusado: 'bg-red-100 text-red-800',
-  venda_fechada: 'bg-gold-100 text-gold-800',
+  analise_pendente: 'bg-gold-500/15 text-gold-400',
+  em_analise: 'bg-gold-500/15 text-gold-400',
+  follow_up: 'bg-gold-500/15 text-gold-400',
+  reuniao_agendada: 'bg-gold-500/15 text-gold-400',
+  recusado: 'bg-red-500/15 text-red-400',
+  venda_fechada: 'bg-gold-500/15 text-gold-400',
 };
 
 export function StatusSelect({ value, onChange }: Props) {

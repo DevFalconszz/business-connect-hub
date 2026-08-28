@@ -12,18 +12,18 @@ interface Props {
 }
 
 const statusRowBg: Record<string, string> = {
-  analise_pendente: 'bg-gold-50/50',
-  em_analise: 'bg-gold-50/50',
-  follow_up: 'bg-gold-50/50',
-  reuniao_agendada: 'bg-gold-50/50',
-  recusado: 'bg-red-50/50',
-  venda_fechada: 'bg-gold-50/50',
+  analise_pendente: 'bg-gold-500/[0.08]',
+  em_analise: 'bg-gold-500/[0.08]',
+  follow_up: 'bg-gold-500/[0.08]',
+  reuniao_agendada: 'bg-gold-500/[0.08]',
+  recusado: 'bg-red-500/[0.08]',
+  venda_fechada: 'bg-gold-500/[0.08]',
 };
 
 function EditableCell({ value, onChange, className = '' }: { value: string; onChange: (v: string) => void; className?: string }) {
   return (
     <Input
-      className={`h-8 text-xs border-transparent bg-transparent hover:border-gray-300 focus:border-gold-500 transition-colors ${className}`}
+      className={`h-8 text-xs border-transparent bg-transparent hover:border-border focus:border-gold-500 transition-colors ${className}`}
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
@@ -32,27 +32,27 @@ function EditableCell({ value, onChange, className = '' }: { value: string; onCh
 
 export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Props) {
   return (
-    <div className="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm">
+    <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              <th className="sticky left-0 z-10 bg-gray-50 backdrop-blur px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Nome</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Status</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Nicho</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Cidade</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">UF</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Telefone</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Nome Decisor</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">N\u00famero Decisor</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-gray-700 whitespace-nowrap">Respons\u00e1vel</th>
-              <th className="sticky right-0 z-10 bg-gray-50 backdrop-blur px-3 py-2.5 text-center font-semibold text-xs text-gray-700 whitespace-nowrap">A\u00e7\u00f5es</th>
+            <tr className="border-b border-border bg-accent/50">
+              <th className="sticky left-0 z-10 bg-accent/50 backdrop-blur px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nome</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Status</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nicho</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Cidade</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">UF</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Telefone</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nome Decisor</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">N\u00famero Decisor</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Respons\u00e1vel</th>
+              <th className="sticky right-0 z-10 bg-accent/50 backdrop-blur px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground whitespace-nowrap">A\u00e7\u00f5es</th>
             </tr>
           </thead>
           <tbody>
             {leads.map((lead) => (
-              <tr key={lead.id} className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${statusRowBg[lead.status] || ''}`}>
-                <td className="sticky left-0 z-10 bg-white px-3 py-1.5 font-medium whitespace-nowrap max-w-[200px] text-gray-900" style={lead.status !== 'none' ? { backgroundColor: 'inherit' } : undefined}>
+              <tr key={lead.id} className={`border-b border-border hover:bg-accent/40 transition-colors ${statusRowBg[lead.status] || ''}`}>
+                <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-medium whitespace-nowrap max-w-[200px] text-foreground" style={lead.status !== 'none' ? { backgroundColor: 'inherit' } : undefined}>
                   <EditableCell value={lead.name} onChange={(v) => onUpdateLead({ ...lead, name: v })} className="font-medium w-[180px]" />
                 </td>
                 <td className="px-3 py-1.5">
@@ -79,12 +79,12 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
                 <td className="px-3 py-1.5">
                   <EditableCell value={lead.responsavel} onChange={(v) => onUpdateLead({ ...lead, responsavel: v })} className="w-[120px]" />
                 </td>
-                <td className="sticky right-0 z-10 bg-white px-3 py-1.5 text-center">
+                <td className="sticky right-0 z-10 bg-card px-3 py-1.5 text-center">
                   <div className="flex items-center gap-1 justify-center">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-gray-100" onClick={() => onOpenLead(lead)}>
-                      <Eye className="w-4 h-4 text-gray-600" />
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-accent" onClick={() => onOpenLead(lead)}>
+                      <Eye className="w-4 h-4 text-muted-foreground" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => onDeleteLead(lead.id)}>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-400 hover:bg-accent" onClick={() => onDeleteLead(lead.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -95,8 +95,8 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
         </table>
       </div>
       {leads.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-lg font-medium text-gray-700">Nenhum lead encontrado</p>
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-lg font-medium text-foreground">Nenhum lead encontrado</p>
           <p className="text-sm mt-1">Faça upload de uma planilha ou adicione manualmente.</p>
         </div>
       )}

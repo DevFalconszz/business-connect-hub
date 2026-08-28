@@ -2,8 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// PROJETO COMPARTILHADO (web + mobile utilizam o MESMO banco de dados)
+// Este é o projeto Supabase do aplicativo mobile (pgqwjooucborcdqwsoui).
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://pgqwjooucborcdqwsoui.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  'sb_publishable_CcT-bKZpAAU-sSCkc7w6QA_MMF8kJDQ';
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

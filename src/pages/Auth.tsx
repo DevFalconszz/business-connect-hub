@@ -52,14 +52,14 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white border-0 shadow-2xl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-card border-border shadow-2xl">
         <CardHeader className="text-center pb-2">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Zap className="w-8 h-8 text-gold-500" />
-            <span className="text-2xl font-bold text-black">Business Connect Hub</span>
+            <span className="text-2xl font-bold text-foreground">CRM MI</span>
           </div>
-          <CardTitle className="text-xl text-gray-600 font-normal">
+          <CardTitle className="text-xl text-muted-foreground font-normal">
             {isLogin ? 'Entre na sua conta' : 'Crie sua conta'}
           </CardTitle>
         </CardHeader>
@@ -67,45 +67,45 @@ export default function Auth() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm text-gray-600">Nome completo</Label>
+                <Label htmlFor="fullName" className="text-sm text-muted-foreground">Nome completo</Label>
                 <Input
                   id="fullName"
                   type="text"
                   placeholder="Seu nome"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="h-12 rounded-xl border-gray-200 focus:border-gold-500 focus:ring-gold-500"
+                  className="h-12 rounded-xl bg-background border-input focus:border-gold-500 focus:ring-gold-500"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-gray-600">Email</Label>
+              <Label htmlFor="email" className="text-sm text-muted-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 rounded-xl border-gray-200 focus:border-gold-500 focus:ring-gold-500"
+                className="h-12 rounded-xl bg-background border-input focus:border-gold-500 focus:ring-gold-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-gray-600">Senha</Label>
+              <Label htmlFor="password" className="text-sm text-muted-foreground">Senha</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 rounded-xl border-gray-200 focus:border-gold-500 focus:ring-gold-500"
+                className="h-12 rounded-xl bg-background border-input focus:border-gold-500 focus:ring-gold-500"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl text-base font-semibold bg-black text-white hover:bg-gray-900"
+              className="w-full h-12 rounded-xl text-base font-semibold bg-gold-500 text-black hover:bg-gold-600"
               disabled={loading}
             >
               {loading ? (
@@ -120,7 +120,7 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-gold-600 hover:text-gold-700 font-medium"
+              className="text-sm text-gold-500 hover:text-gold-400 font-medium"
             >
               {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
             </button>

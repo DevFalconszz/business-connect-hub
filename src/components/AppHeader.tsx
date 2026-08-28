@@ -14,12 +14,12 @@ export function AppHeader() {
   const { signOut, user } = useAuth();
 
   return (
-    <header className="border-b bg-black text-white sticky top-0 z-30">
+    <header className="border-b border-border bg-card text-foreground sticky top-0 z-30">
       <div className="max-w-[1600px] mx-auto px-4">
         <div className="flex items-center gap-6 h-14">
           <span className="text-lg font-bold text-gold-500 shrink-0 flex items-center gap-2">
             <Zap className="w-5 h-5" />
-            Business Connect Hub
+            CRM MI
           </span>
           {isLocal() && (
             <span className="text-[10px] font-mono bg-gold-500/20 text-gold-400 px-2 py-0.5 rounded-full border border-gold-500/30">
@@ -36,7 +36,7 @@ export function AppHeader() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                     active
                       ? 'bg-gold-500 text-black'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -45,13 +45,13 @@ export function AppHeader() {
               );
             })}
           </nav>
-          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/20">
-            <span className="text-xs text-white/50 hidden sm:inline">{user?.email}</span>
+          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-border">
+            <span className="text-xs text-muted-foreground hidden sm:inline">{user?.email}</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={signOut}
-              className="text-white/70 hover:text-white hover:bg-white/10 h-9 px-3"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent h-9 px-3"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline ml-1">Sair</span>

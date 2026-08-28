@@ -33,6 +33,7 @@ export async function loadLeads(): Promise<Lead[]> {
 }
 
 export async function insertLead(lead: Omit<Lead, 'id'>): Promise<Lead | null> {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.from('leads').insert({
     name: lead.name, title: lead.title, category: lead.category, address: lead.address,
     city: lead.city, state: lead.state, phone: lead.phone, website: lead.website,
@@ -40,12 +41,14 @@ export async function insertLead(lead: Omit<Lead, 'id'>): Promise<Lead | null> {
     instagram: lead.instagram, responsavel: lead.responsavel, descricao: lead.descricao,
     status: lead.status, whatsapp_group: lead.whatsapp_group, meeting_dates: lead.meeting_dates,
     nome_decisor: lead.nome_decisor, numero_decisor: lead.numero_decisor,
+    user_id: user?.id,
   }).select().single();
   if (error) { console.error('Error inserting lead:', error); return null; }
   return rowToLead(data);
 }
 
 export async function insertLeads(leads: Omit<Lead, 'id'>[]): Promise<Lead[]> {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.from('leads').insert(leads.map(l => ({
     name: l.name, title: l.title, category: l.category, address: l.address,
     city: l.city, state: l.state, phone: l.phone, website: l.website,
@@ -53,6 +56,7 @@ export async function insertLeads(leads: Omit<Lead, 'id'>[]): Promise<Lead[]> {
     instagram: l.instagram, responsavel: l.responsavel, descricao: l.descricao,
     status: l.status, whatsapp_group: l.whatsapp_group, meeting_dates: l.meeting_dates,
     nome_decisor: l.nome_decisor, numero_decisor: l.numero_decisor,
+    user_id: user?.id,
   }))).select();
   if (error) { console.error('Error inserting leads:', error); return []; }
   return (data || []).map(rowToLead);
