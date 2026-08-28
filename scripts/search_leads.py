@@ -30,16 +30,20 @@ FACE_RE = re.compile(r'facebook\.com/([^/"\'\s?#]+)', re.I)
 
 
 def is_valid_br_phone(phone: str) -> bool:
-    digits = re.sub(r"\D", "", phone)
-    return 10 <= len(digits) <= 11 and not re.match(r"^(\d)\1+$", digits)
+    d = re.sub(r"\D", "", phone)
+    if (len(d) == 12 or len(d) == 13) and d.startswith("55"):
+        d = d[2:]
+    return (len(d) == 10 or len(d) == 11) and not re.match(r"^(\d)\1+$", d)
 
 
 def normalize_phone(phone: str) -> str:
-    digits = re.sub(r"\D", "", phone)
-    if len(digits) == 11:
-        return f"({digits[:2]}) {digits[2:7]}-{digits[7:]}"
-    if len(digits) == 10:
-        return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
+    d = re.sub(r"\D", "", phone)
+    if (len(d) == 12 or len(d) == 13) and d.startswith("55"):
+        d = d[2:]
+    if len(d) == 11:
+        return f"({d[:2]}) {d[2:7]}-{d[7:]}"
+    if len(d) == 10:
+        return f"({d[:2]}) {d[2:6]}-{d[6:]}"
     return phone.strip()
 
 

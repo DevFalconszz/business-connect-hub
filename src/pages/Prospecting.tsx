@@ -9,9 +9,11 @@ import { StructuredResult } from '@/lib/opencode-api';
 import { searchLeadsLocal, isLocalServerRunning } from '@/lib/opencode-api';
 import { searchBusinesses } from '@/lib/firecrawl-api';
 import { detectAds } from '@/lib/detect-ads';
+import { enrichPhones } from '@/lib/enrich-phone';
 import { insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff } from 'lucide-react';
+import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
 import { toast } from 'sonner';
 import { isLocal } from '@/lib/env-check';
 
@@ -28,18 +30,21 @@ export default function Prospecting() {
     isLocalServerRunning().then(running => setLocalMode(running));
   }, []);
 
-  const enrichWithAds = async (list: StructuredResult[]): Promise<StructuredResult[]> => {
-    try {
-      const map = await detectAds(
-        list.map((r) => ({ businessName: r.name, website: r.website }))
-      );
-      return list.map((r) => ({
+  const enrichResults = async (list: StructuredResult[]): Promise<StructuredResult[]> => {
+    const items = list.map((r) => ({ name: r.name, website: r.website, phone: r.phone }));
+    const [adsMap, phones] = await Promise.all([
+      detectAds(list.map((r) => ({ businessName: r.name, website: r.website }))),
+      enrichPhones(items),
+    ]);
+    return list.map((r) => {
+      const key = r.website || r.name;
+      const newPhone = phones.map[key];
+      return {
         ...r,
-        has_ads: map[r.website || r.name] ?? r.has_ads,
-      }));
-    } catch {
-      return list;
-    }
+        has_ads: adsMap[key] ?? r.has_ads,
+        phone: newPhone && newPhone !== r.phone ? newPhone : r.phone,
+      };
+    });
   };
 
   const handleSearch = async () => {
@@ -53,7 +58,7 @@ export default function Prospecting() {
       if (localMode) {
         const res = await searchLeadsLocal(niche, city);
         if (res.success && res.data && res.data.length > 0) {
-          setResults(await enrichWithAds(res.data));
+          setResults(await enrichResults(res.data));
           toast.success(`${res.data.length} resultados encontrados!`);
         } else {
           toast.error(res.error || 'Nenhum resultado encontrado.');
@@ -61,7 +66,7 @@ export default function Prospecting() {
       } else {
         const res = await searchBusinesses(niche, city);
         if (res.success && res.data && res.data.length > 0) {
-          setResults(await enrichWithAds(res.data));
+          setResults(await enrichResults(res.data));
           if (res.message) {
             toast.warning(res.message);
           } else {
@@ -180,7 +185,7 @@ export default function Prospecting() {
                       <TableHead className="text-muted-foreground font-semibold">UF</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Telefone</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Site</TableHead>
-                      <TableHead className="text-muted-foreground font-semibold">Anúncios</TableHead>
+                      <TableHead className="text-muted-foreground font-semibold">Verificar Anúncios</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -204,11 +209,14 @@ export default function Prospecting() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {result.has_ads ? (
-                            <Badge variant="outline" className="text-xs gap-1 border-border"><CheckCircle className="w-3 h-3 text-green-500" />Ativo</Badge>
-                          ) : (
-                            <Badge variant="destructive" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sem anúncios</Badge>
-                          )}
+                          <a
+                            href={adLibraryUrl(adLibraryQueryTerm(result.instagram, result.name))}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-gold-500 text-xs hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Ver na Ad Library
+                          </a>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -241,7 +249,14 @@ export default function Prospecting() {
                 {results[addingIndex].phone && <p className="text-xs text-muted-foreground">{'\uD83D\uDCDE'} {results[addingIndex].phone}</p>}
                 <div className="flex gap-2 mt-1">
                   {!results[addingIndex].has_website && <Badge variant="destructive" className="text-[10px]">Sem site</Badge>}
-                  {!results[addingIndex].has_ads && <Badge variant="destructive" className="text-[10px]">Sem anúncios</Badge>}
+                  <a
+                    href={adLibraryUrl(adLibraryQueryTerm(results[addingIndex].instagram, results[addingIndex].name))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-gold-500 text-[10px] hover:underline"
+                  >
+                    <ExternalLink className="w-3 h-3" /> Ver na Ad Library
+                  </a>
                 </div>
               </div>
               <div>
