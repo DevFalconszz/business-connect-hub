@@ -272,14 +272,21 @@ export default function Prospecting() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <a
-                            href={adLibraryUrl(adLibraryQueryTerm(result.instagram, result.name))}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gold-600 bg-gold-50 border border-gold-200 rounded-lg hover:bg-gold-100 hover:border-gold-300 transition-colors"
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-8 w-auto min-w-0 px-3 py-1.5 bg-gold-500 text-black hover:bg-gold-600 font-medium"
+                            asChild
                           >
-                            <ExternalLink className="w-3 h-3" /> Ver na Ad Library
-                          </a>
+                            <a
+                              href={adLibraryUrl(adLibraryQueryTerm(result.instagram, result.name))}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1.5" />
+                              Ver na Ad Library
+                            </a>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -312,14 +319,21 @@ export default function Prospecting() {
                 {results[addingIndex].phone && <p className="text-xs text-muted-foreground">{'\uD83D\uDCDE'} {results[addingIndex].phone}</p>}
                 <div className="flex gap-2 mt-1">
                   {!results[addingIndex].has_website && <Badge variant="destructive" className="text-[10px]">Sem site</Badge>}
-                  <a
-                    href={adLibraryUrl(adLibraryQueryTerm(results[addingIndex].instagram, results[addingIndex].name))}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-gold-600 bg-gold-50 border border-gold-200 rounded-lg hover:bg-gold-100 hover:border-gold-300 transition-colors"
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-8 w-auto min-w-0 px-3 py-1.5 bg-gold-500 text-black hover:bg-gold-600 font-medium"
+                    asChild
                   >
-                    <ExternalLink className="w-3 h-3" /> Ver na Ad Library
-                  </a>
+                    <a
+                      href={adLibraryUrl(adLibraryQueryTerm(results[addingIndex].instagram, results[addingIndex].name))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1.5" />
+                      Ver na Ad Library
+                    </a>
+                  </Button>
                 </div>
               </div>
               <div>
