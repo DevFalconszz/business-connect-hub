@@ -35,18 +35,17 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
     <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
+<thead>
             <tr className="border-b border-border bg-accent/50">
               <th className="sticky left-0 z-10 bg-accent/50 backdrop-blur px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nome</th>
               <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Status</th>
               <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nicho</th>
               <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Cidade</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">UF</th>
               <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Telefone</th>
               <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Nome Decisor</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">N\u00famero Decisor</th>
-              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Respons\u00e1vel</th>
-              <th className="sticky right-0 z-10 bg-accent/50 backdrop-blur px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground whitespace-nowrap">A\u00e7\u00f5es</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Número Decisor</th>
+              <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground whitespace-nowrap">Responsável</th>
+              <th className="sticky right-0 z-10 bg-accent/50 backdrop-blur px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground whitespace-nowrap">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -63,9 +62,6 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
                 </td>
                 <td className="px-3 py-1.5">
                   <EditableCell value={lead.city} onChange={(v) => onUpdateLead({ ...lead, city: v })} className="w-[110px]" />
-                </td>
-                <td className="px-3 py-1.5">
-                  <EditableCell value={lead.state} onChange={(v) => onUpdateLead({ ...lead, state: v })} className="w-[50px]" />
                 </td>
                 <td className="px-3 py-1.5">
                   <EditableCell value={lead.phone} onChange={(v) => onUpdateLead({ ...lead, phone: v })} className="w-[130px] font-mono-num" />
