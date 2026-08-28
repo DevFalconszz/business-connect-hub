@@ -72,14 +72,21 @@ export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
                 {lead.website && <div className="flex items-center gap-2"><Globe className="w-4 h-4 text-muted-foreground shrink-0" /><a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-gold-500 hover:underline truncate">{lead.website}</a></div>}
                 {lead.instagram && <div className="flex items-center gap-2"><Instagram className="w-4 h-4 text-muted-foreground shrink-0" /><span>{lead.instagram}</span></div>}
                 {lead.google_maps_url && <a href={lead.google_maps_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-gold-500 text-xs hover:underline"><ExternalLink className="w-3 h-3" /> Ver no Google Maps</a>}
-                <a
-                  href={adLibraryUrl(adLibraryQueryTerm(lead.instagram, lead.name))}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-gold-500 text-xs hover:underline"
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 w-auto min-w-0 px-3 py-1.5 bg-gold-500 text-black hover:bg-gold-600 font-medium"
+                  asChild
                 >
-                  <ExternalLink className="w-3 h-3" /> Ver na Ad Library
-                </a>
+                  <a
+                    href={adLibraryUrl(adLibraryQueryTerm(lead.instagram, lead.name))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1.5" />
+                    Ver na Ad Library
+                  </a>
+                </Button>
               </div>
             </section>
 
