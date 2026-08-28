@@ -105,7 +105,12 @@ export default function Prospecting() {
         const nameKey = (r.name || '').trim().toLowerCase();
         if (!nameKey || savedNames.has(nameKey)) continue; // já salvo
         if (newResults.some((nr) => nr.name.trim().toLowerCase() === nameKey)) continue; // duplicado na mesma busca
-        newResults.push(r);
+        // Infere UF se não veio
+        const enriched = {
+          ...r,
+          state: r.state || inferUf(r.city) || inferUf(city),
+        };
+        newResults.push(enriched);
         if (newResults.length >= targetCount) break;
       }
       page++;
