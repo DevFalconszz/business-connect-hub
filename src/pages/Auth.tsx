@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +9,19 @@ import { Zap, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Auth() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, loading } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +36,7 @@ export default function Auth() {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
     try {
       if (isLogin) {
         const { error } = await signIn(email.trim(), password);
@@ -36,6 +44,7 @@ export default function Auth() {
           toast.error(error.message);
         } else {
           toast.success('Login realizado com sucesso!');
+          navigate('/', { replace: true });
         }
       } else {
         const { error } = await signUp(email.trim(), password, fullName.trim());
@@ -47,7 +56,7 @@ export default function Auth() {
         }
       }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -106,9 +115,9 @@ export default function Auth() {
             <Button
               type="submit"
               className="w-full h-12 rounded-xl text-base font-semibold bg-gold-500 text-black hover:bg-gold-600"
-              disabled={loading}
+              disabled={submitting}
             >
-              {loading ? (
+              {submitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 isLogin ? 'Entrar' : 'Criar Conta'
