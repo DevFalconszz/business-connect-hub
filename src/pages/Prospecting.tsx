@@ -18,6 +18,14 @@ import { inferUf } from '@/lib/uf';
 import { toast } from 'sonner';
 import { isLocal } from '@/lib/env-check';
 
+const RESULTS_KEY = 'prospecting_results_v1';
+
+interface PersistedResults {
+  niche: string;
+  city: string;
+  results: StructuredResult[];
+}
+
 export default function Prospecting() {
   const [niche, setNiche] = useState('');
   const [city, setCity] = useState('');
@@ -30,6 +38,35 @@ export default function Prospecting() {
   useEffect(() => {
     isLocalServerRunning().then(running => setLocalMode(running));
   }, []);
+
+  // Restaura a última pesquisa ao voltar para a página (não some ao trocar de aba/recarregar).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(RESULTS_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as PersistedResults;
+        if (Array.isArray(saved.results) && saved.results.length > 0) {
+          setNiche(saved.niche || '');
+          setCity(saved.city || '');
+          setResults(saved.results);
+        }
+      }
+    } catch {
+      // ignora dados corrompidos
+    }
+  }, []);
+
+  // Persiste os resultados sempre que forem atualizados (nova busca sobrescreve).
+  useEffect(() => {
+    if (!loading && Array.isArray(results) && results.length > 0) {
+      const payload: PersistedResults = { niche, city, results };
+      try {
+        sessionStorage.setItem(RESULTS_KEY, JSON.stringify(payload));
+      } catch {
+        // ignora falha de storage (ex: quota)
+      }
+    }
+  }, [results, loading, niche, city]);
 
   const enrichResults = async (list: StructuredResult[]): Promise<StructuredResult[]> => {
     const items = list.map((r) => ({ name: r.name, website: r.website, phone: r.phone }));
