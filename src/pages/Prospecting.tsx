@@ -47,16 +47,22 @@ export default function Prospecting() {
         const res = await searchBusinesses(niche, city);
         if (res.success && res.data && res.data.length > 0) {
           setResults(res.data);
-          toast.success(`${res.data.length} resultados encontrados!`);
+          if (res.message) {
+            toast.warning(res.message);
+          } else {
+            toast.success(`${res.data.length} resultados encontrados!`);
+          }
+        } else if (res.success) {
+          toast.warning(res.message || 'Nenhum estabelecimento encontrado para esse nicho e cidade.');
         } else {
-          toast.error(res.error || 'Nenhum resultado encontrado.');
+          toast.error(res.error || 'Não foi possível concluir a busca.');
         }
       }
     } catch (err: any) {
       if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
         toast.error('A busca está demorando mais que o esperado. Tente novamente.');
       } else {
-        toast.error('Erro ao buscar leads. Verifique se o servidor local está rodando.');
+        toast.error(err?.message || 'Erro ao buscar leads. Tente novamente em instantes.');
       }
     } finally {
       setLoading(false);

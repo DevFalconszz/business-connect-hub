@@ -24,6 +24,12 @@ export interface SearchResponse {
 }
 
 export async function isLocalServerRunning(): Promise<boolean> {
+  // O servidor de verificação roda apenas em ambiente de desenvolvimento local.
+  // Em produção/preview, evitamos a requisição (que sempre falharia e polui o console).
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') return false;
+  }
   try {
     const res = await fetch(`${LOCAL_SERVER_URL}/api/health`, { signal: AbortSignal.timeout(3000) });
     const data = await res.json();

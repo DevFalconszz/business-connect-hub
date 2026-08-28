@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 export interface StructuredResult {
   name: string;
@@ -20,18 +21,34 @@ export interface StructuredResult {
 export interface SearchResponse {
   success: boolean;
   error?: string;
+  message?: string;
   data?: StructuredResult[];
 }
 
 export async function searchBusinesses(niche: string, city: string): Promise<SearchResponse> {
-  const query = `${niche} em ${city} telefone endereço avaliações`;
+  const query = `${niche} em ${city} telefone endereço contato`;
 
-  const { data, error } = await supabase.functions.invoke('firecrawl-search', {
-    body: { query, options: { limit: 20, lang: 'pt-BR', country: 'BR', niche, city } },
+  const { data, error } = await supabase.functions.invoke<SearchResponse>('firecrawl-search', {
+    body: { query, options: { limit: 15, lang: 'pt-BR', country: 'BR', niche, city } },
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    let details = error.message;
+    if (error instanceof FunctionsHttpError) {
+      const body = await error.context.text().catch(() => '');
+      try {
+        const parsed = JSON.parse(body);
+        details = parsed.error || body || details;
+      } catch {
+        details = body || details;
+      }
+    }
+    console.error('firecrawl-search falhou:', details);
+    return { success: false, error: details };
+  }
+
+  if (!data) {
+    return { success: false, error: 'Resposta vazia do servidor de busca.' };
   }
 
   return data;
