@@ -26,10 +26,8 @@ export interface SearchResponse {
 }
 
 export async function searchBusinesses(niche: string, city: string): Promise<SearchResponse> {
-  const query = `${niche} em ${city} telefone endereço contato`;
-
-  const { data, error } = await supabase.functions.invoke<SearchResponse>('firecrawl-search', {
-    body: { query, options: { limit: 15, lang: 'pt-BR', country: 'BR', niche, city } },
+  const { data, error } = await supabase.functions.invoke<SearchResponse>('search-leads', {
+    body: { niche: niche.trim(), city: city.trim() },
   });
 
   if (error) {
@@ -38,12 +36,12 @@ export async function searchBusinesses(niche: string, city: string): Promise<Sea
       const body = await error.context.text().catch(() => '');
       try {
         const parsed = JSON.parse(body);
-        details = parsed.error || body || details;
+        details = parsed.error || parsed.detail || body || details;
       } catch {
         details = body || details;
       }
     }
-    console.error('firecrawl-search falhou:', details);
+    console.error('search-leads falhou:', details);
     return { success: false, error: details };
   }
 
@@ -51,5 +49,6 @@ export async function searchBusinesses(niche: string, city: string): Promise<Sea
     return { success: false, error: 'Resposta vazia do servidor de busca.' };
   }
 
+  // Pipeline assíncrono (202): busca iniciada em background, sem lista imediata.
   return data;
 }

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Lead } from '../../lib/types';
 import { insertLead } from '../../lib/leads-store';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,6 +32,7 @@ interface SearchResult {
 
 export default function ProspectingScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [niche, setNiche] = useState('');
   const [city, setCity] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -59,7 +61,13 @@ export default function ProspectingScreen() {
         return;
       }
 
-      if (data?.success && data?.data) {
+      if (data?.success === true) {
+        showAlert('Busca iniciada', data.message || 'Busca iniciada em background. Os leads aparecerão em instantes na aba Leads.');
+        router.push('/');
+        return;
+      }
+
+      if (data?.success && data?.data && data.data.length > 0) {
         setResults(data.data);
       } else {
         showAlert('Erro', data?.error || 'Não foi possível buscar leads.');

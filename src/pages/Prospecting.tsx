@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 import { isLocal } from '@/lib/env-check';
 
 export default function Prospecting() {
+  const navigate = useNavigate();
   const [niche, setNiche] = useState('');
   const [city, setCity] = useState('');
   const [results, setResults] = useState<StructuredResult[]>([]);
@@ -53,7 +55,8 @@ export default function Prospecting() {
             toast.success(`${res.data.length} resultados encontrados!`);
           }
         } else if (res.success) {
-          toast.warning(res.message || 'Nenhum estabelecimento encontrado para esse nicho e cidade.');
+          toast.success(res.message || 'Busca iniciada em background. Os leads aparecerão na aba Gestão de Leads.');
+          navigate('/', { replace: true });
         } else {
           toast.error(res.error || 'Não foi possível concluir a busca.');
         }
