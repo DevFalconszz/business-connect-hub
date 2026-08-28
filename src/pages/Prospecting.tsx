@@ -14,6 +14,7 @@ import { insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
+import { inferUf } from '@/lib/uf';
 import { toast } from 'sonner';
 import { isLocal } from '@/lib/env-check';
 
@@ -97,10 +98,13 @@ export default function Prospecting() {
 
     const toStr = (v: any) => v != null ? String(v) : '';
 
+    const leadCity = toStr(result.city) || city;
+    const leadState = toStr(result.state) || inferUf(leadCity) || inferUf(city);
+
     const lead: Omit<Lead, 'id'> = {
       name: toStr(result.name) || 'Sem nome', title: toStr(result.title),
       category: toStr(result.category) || niche, address: toStr(result.address),
-      city: toStr(result.city) || city, state: toStr(result.state),
+      city: leadCity, state: leadState,
       phone: toStr(result.phone), website: toStr(result.website),
       google_maps_url: toStr(result.google_maps_url), rating: toStr(result.rating),
       reviews_count: toStr(result.reviews_count), instagram: toStr(result.instagram),
@@ -197,7 +201,7 @@ export default function Prospecting() {
                           </Button>
                         </TableCell>
                         <TableCell className="font-medium text-sm max-w-[200px] truncate text-foreground">{result.name || '\u2014'}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{result.category || '\u2014'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{niche || result.category || '\u2014'}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{result.city || '\u2014'}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{result.state || '\u2014'}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{result.phone || '\u2014'}</TableCell>
@@ -245,7 +249,7 @@ export default function Prospecting() {
             <div className="space-y-4">
               <div className="bg-accent rounded-xl p-3 space-y-1 border border-border">
                 <p className="font-semibold text-sm truncate text-foreground">{results[addingIndex].name}</p>
-                <p className="text-xs text-muted-foreground">{results[addingIndex].category} &bull; {results[addingIndex].city}/{results[addingIndex].state}</p>
+                <p className="text-xs text-muted-foreground">{niche || results[addingIndex].category} &bull; {results[addingIndex].city}/{results[addingIndex].state}</p>
                 {results[addingIndex].phone && <p className="text-xs text-muted-foreground">{'\uD83D\uDCDE'} {results[addingIndex].phone}</p>}
                 <div className="flex gap-2 mt-1">
                   {!results[addingIndex].has_website && <Badge variant="destructive" className="text-[10px]">Sem site</Badge>}
