@@ -10,11 +10,13 @@ import { searchLeadsLocal, isLocalServerRunning } from '@/lib/opencode-api';
 import { searchBusinesses } from '@/lib/firecrawl-api';
 import { detectAds } from '@/lib/detect-ads';
 import { enrichPhones } from '@/lib/enrich-phone';
-import { insertLead } from '@/lib/leads-store';
+import { loadLeads, insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
+import { searchLeadsPaged } from '@/lib/search-paged';
 import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
 import { inferUf } from '@/lib/uf';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { isLocal } from '@/lib/env-check';
 
@@ -27,12 +29,13 @@ interface PersistedResults {
 }
 
 export default function Prospecting() {
+  const { user } = useAuth();
   const [niche, setNiche] = useState('');
   const [city, setCity] = useState('');
   const [results, setResults] = useState<StructuredResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
-  const [responsavel, setResponsavel] = useState('');
+  const [responsavel, setResponsavel] = useState(user?.user_metadata?.full_name || user?.email || '');
   const [localMode, setLocalMode] = useState(false);
 
   useEffect(() => {
@@ -85,6 +88,31 @@ export default function Prospecting() {
     });
   };
 
+  // Busca paginada com deduplicação: filtra leads já salvos e completa até X novos.
+  const searchWithDedup = async (niche: string, city: string, targetCount: number = 20): Promise<StructuredResult[]> => {
+    const savedLeads = await loadLeads();
+    const savedNames = new Set(savedLeads.map((l) => l.name.trim().toLowerCase()));
+    const newResults: StructuredResult[] = [];
+    let page = 1;
+    const numPerPage = 20;
+    const maxPages = 10; // segurança
+
+    while (newResults.length < targetCount && page <= maxPages) {
+      const res = await searchLeadsPaged(niche, city, page, numPerPage);
+      if (!res.success || !res.data || res.data.length === 0) break;
+
+      for (const r of res.data) {
+        const nameKey = (r.name || '').trim().toLowerCase();
+        if (!nameKey || savedNames.has(nameKey)) continue; // já salvo
+        if (newResults.some((nr) => nr.name.trim().toLowerCase() === nameKey)) continue; // duplicado na mesma busca
+        newResults.push(r);
+        if (newResults.length >= targetCount) break;
+      }
+      page++;
+    }
+    return newResults.slice(0, targetCount);
+  };
+
   const handleSearch = async () => {
     if (!niche.trim() || !city.trim()) {
       toast.error('Preencha o nicho e a cidade.');
@@ -102,18 +130,12 @@ export default function Prospecting() {
           toast.error(res.error || 'Nenhum resultado encontrado.');
         }
       } else {
-        const res = await searchBusinesses(niche, city);
-        if (res.success && res.data && res.data.length > 0) {
-          setResults(await enrichResults(res.data));
-          if (res.message) {
-            toast.warning(res.message);
-          } else {
-            toast.success(`${res.data.length} resultados encontrados!`);
-          }
-        } else if (res.success) {
-          toast.info(res.message || 'Nenhum resultado retornado. Tente outro nicho ou cidade.');
+        const found = await searchWithDedup(niche, city, 20);
+        if (found.length > 0) {
+          setResults(await enrichResults(found));
+          toast.success(`${found.length} resultados novos encontrados!`);
         } else {
-          toast.error(res.error || 'Não foi possível concluir a busca.');
+          toast.info('Todos os resultados já estão salvos ou nenhum encontrado.');
         }
       }
     } catch (err: any) {
@@ -254,7 +276,7 @@ export default function Prospecting() {
                             href={adLibraryUrl(adLibraryQueryTerm(result.instagram, result.name))}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-gold-500 text-xs hover:underline"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gold-600 bg-gold-50 border border-gold-200 rounded-lg hover:bg-gold-100 hover:border-gold-300 transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" /> Ver na Ad Library
                           </a>
@@ -294,7 +316,7 @@ export default function Prospecting() {
                     href={adLibraryUrl(adLibraryQueryTerm(results[addingIndex].instagram, results[addingIndex].name))}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-gold-500 text-[10px] hover:underline"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-gold-600 bg-gold-50 border border-gold-200 rounded-lg hover:bg-gold-100 hover:border-gold-300 transition-colors"
                   >
                     <ExternalLink className="w-3 h-3" /> Ver na Ad Library
                   </a>
