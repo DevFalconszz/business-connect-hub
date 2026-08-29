@@ -112,6 +112,29 @@ async function serpSearch(niche: string, city: string, start: number, num: numbe
   return await res.json();
 }
 
+// 1 busca SerpAPI por cada ficha de local aberta (type=place).
+async function serpPlace(placeId: string, dataId: string, lat: string, lng: string) {
+  const params = new URLSearchParams({
+    engine: 'google_maps',
+    type: 'place',
+    hl: 'pt-br',
+    api_key: SERPAPI_KEY,
+  });
+  if (placeId) {
+    params.set('place_id', placeId);
+  } else if (dataId) {
+    // formato exigido: !4m5!3m4!1s{data_id}!8m2!3d{lat}!4d{lng}
+    params.set('data', `!4m5!3m4!1s${dataId}!8m2!3d${lat}!4d${lng}`);
+  } else {
+    return null;
+  }
+  const res = await fetch(`https://serpapi.com/search.json?${params}`, {
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) return null;
+  return await res.json();
+}
+
 function mapPlace(p: Record<string, unknown>): Record<string, unknown> {
   const name = String(p.title || p.name || '').trim();
   const city = String(p.city || '').trim();
@@ -139,6 +162,11 @@ function mapPlace(p: Record<string, unknown>): Record<string, unknown> {
     google_maps_url,
     has_website: isRealOwnWebsite(website) && website.length > 0,
     has_ads: false,
+    // identificadores usados para abrir a ficha (type=place) se precisar de telefone
+    _place_id: String(p.place_id || ''),
+    _data_id: String(p.data_id || ''),
+    _latitude: String(p.gps_coordinates?.latitude ?? p.latitude ?? ''),
+    _longitude: String(p.gps_coordinates?.longitude ?? p.longitude ?? ''),
   };
 }
 
@@ -175,12 +203,34 @@ serve(async (req: Request): Promise<Response> => {
       })
       .map(mapPlace);
 
+    // Opção 2: abre a ficha (type=place) apenas dos que vieram SEM telefone,
+    // para capturar o telefone oficial do Google Maps sem gastar créditos à toa.
+    const enriched = [];
+    for (const r of results as Array<Record<string, unknown>>) {
+      if (!r.phone) {
+        const place = await serpPlace(
+          String(r._place_id || ''),
+          String(r._data_id || ''),
+          String(r._latitude || ''),
+          String(r._longitude || ''),
+        );
+        const pr = place?.place_results as Record<string, unknown> | undefined;
+        const phoneRaw = String(pr?.phone || place?.phone || '');
+        if (pr && phoneRaw && isValidBrPhone(phoneRaw)) {
+          r.phone = normalizePhone(phoneRaw);
+        }
+      }
+      // remove campos internos antes de enviar ao cliente
+      const { _place_id, _data_id, _latitude, _longitude, ...clean } = r as Record<string, unknown>;
+      enriched.push(clean);
+    }
+
     return json({
       success: true,
-      data: results,
+      data: enriched,
       page,
       num,
-      total: results.length,
+      total: enriched.length,
     });
   } catch (err) {
     console.error('search-leads-paged error:', (err as Error)?.message || err);
