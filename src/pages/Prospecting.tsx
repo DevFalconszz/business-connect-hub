@@ -13,7 +13,7 @@ import { enrichPhones } from '@/lib/enrich-phone';
 import { loadLeads, insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { searchLeadsPaged } from '@/lib/search-paged';
-import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff } from 'lucide-react';
+import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff, Megaphone } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
 import { inferUf } from '@/lib/uf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,17 +72,19 @@ export default function Prospecting() {
   }, [results, loading, niche, city]);
 
   const enrichResults = async (list: StructuredResult[]): Promise<StructuredResult[]> => {
-    const items = list.map((r) => ({ name: r.name, website: r.website, phone: r.phone }));
+    const items = list.map((r) => ({ name: r.name, website: r.website, phone: r.phone, city }));
     const [adsMap, phones] = await Promise.all([
-      detectAds(list.map((r) => ({ businessName: r.name, website: r.website }))),
+      detectAds(list.map((r) => ({ businessName: r.name, website: r.website, city }))),
       enrichPhones(items),
     ]);
     return list.map((r) => {
       const key = r.website || r.name;
       const newPhone = phones.map[key];
+      const ads = adsMap[key];
       return {
         ...r,
-        has_ads: adsMap[key] ?? r.has_ads,
+        has_ads: ads?.has_ads ?? r.has_ads,
+        google_ads_count: ads?.google_ads_count,
         phone: newPhone && newPhone !== r.phone ? newPhone : r.phone,
       };
     });
@@ -253,6 +255,7 @@ export default function Prospecting() {
                       <TableHead className="text-muted-foreground font-semibold">UF</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Telefone</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Site</TableHead>
+                      <TableHead className="text-muted-foreground font-semibold">Google Ads</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Verificar Anúncios</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -274,6 +277,22 @@ export default function Prospecting() {
                             <Badge variant="outline" className="text-xs gap-1 border-border"><CheckCircle className="w-3 h-3 text-green-500" />Sim</Badge>
                           ) : (
                             <Badge variant="destructive" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sem site</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {result.google_ads_count != null ? (
+                            result.google_ads_count > 0 ? (
+                              <Badge variant="outline" className="text-xs gap-1 border-green-500/40 text-green-600 bg-green-500/10">
+                                <Megaphone className="w-3 h-3" />
+                                {result.google_ads_count} {result.google_ads_count === 1 ? 'anúncio' : 'anúncios'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs gap-1 border-border text-muted-foreground">
+                                <Megaphone className="w-3 h-3" />Sem anúncio
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -324,6 +343,17 @@ export default function Prospecting() {
                 {results[addingIndex].phone && <p className="text-xs text-muted-foreground">{'\uD83D\uDCDE'} {results[addingIndex].phone}</p>}
                 <div className="flex gap-2 mt-1">
                   {!results[addingIndex].has_website && <Badge variant="destructive" className="text-[10px]">Sem site</Badge>}
+                  {results[addingIndex].google_ads_count != null && (
+                    results[addingIndex].google_ads_count > 0 ? (
+                      <Badge variant="outline" className="text-[10px] gap-1 border-green-500/40 text-green-600 bg-green-500/10">
+                        <Megaphone className="w-3 h-3" /> {results[addingIndex].google_ads_count} anúncio{results[addingIndex].google_ads_count > 1 ? 's' : ''} (Google)
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] gap-1 border-border text-muted-foreground">
+                        <Megaphone className="w-3 h-3" /> Sem anúncio no Google
+                      </Badge>
+                    )
+                  )}
                   <Button
                     variant="default"
                     size="sm"

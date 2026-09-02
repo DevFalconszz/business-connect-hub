@@ -1,15 +1,19 @@
 /**
  * Business Connect Hub - detect-ads
  *
- * Verifica se um negócio possui anúncios/campanhas ativas, usando duas fontes:
+ * Verifica se um negócio possui anúncios/campanhas ativas, usando fontes:
  *  1. HTML tags (sem chave): procura padrões de Google Ads, Google Tag Manager,
  *     Meta Pixel, Microsoft/Bing Ads no código-fonte do site.
- *  2. Meta Ad Library API (oficial, gratuita): consulta anúncios ativos por nome
+ *  2. Google Ads via SerpApi (engine=google): consulta se o negócio aparece em
+ *     anúncios patrocinados no Google e retorna a quantidade de anúncios.
+ *     Requer o secret `SERPAPI_KEY` (com fallback legado para compatibilidade).
+ *  3. Meta Ad Library API (oficial, gratuita): consulta anúncios ativos por nome
  *     do negócio. Requer o secret `META_ACCESS_TOKEN` (um token de usuário com
  *     acesso à ferramenta de pesquisa da Ad Library).
  *
- * Se o token não estiver configurado (ou estiver inválido), a verificação Meta é
- * pulada (retorna null) e o resultado se baseia apenas nas tags do HTML.
+ * Se os tokens não estiverem configurados (ou estiverem inválidos), as
+ * verificações correspondentes são puladas (retornam null) e o resultado se
+ * baseia nas demais fontes disponíveis.
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -19,6 +23,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 };
+
+const SERPAPI_KEY =
+  Deno.env.get("SERPAPI_KEY") ||
+  "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -30,16 +38,20 @@ function json(body: unknown, status = 200): Response {
 interface Item {
   businessName?: string;
   website?: string;
+  city?: string;
 }
 
 interface Verification {
   business_name: string;
   website: string | null;
   has_ads: boolean;
+  google_ads_count: number;
   methods: {
     html_tags: boolean | null;
+    google_ads_serpapi: boolean | null;
     meta_ad_library: boolean | null;
   };
+  google_ads_error: string | null;
   meta_error: string | null;
 }
 
@@ -131,23 +143,69 @@ async function checkMetaAds(businessName: string): Promise<{ has_ads: boolean | 
   }
 }
 
+async function checkGoogleAdsSerpApi(
+  businessName: string,
+  city?: string,
+): Promise<{ count: number; found: boolean | null; error: string | null }> {
+  if (!SERPAPI_KEY || !businessName) {
+    return { count: 0, found: null, error: !SERPAPI_KEY ? 'SERPAPI_KEY não configurado (pulado)' : null };
+  }
+  try {
+    const query = city?.trim()
+      ? `${businessName} ${city.trim()}`
+      : businessName;
+    const params = new URLSearchParams({
+      engine: 'google',
+      q: query,
+      hl: 'pt-br',
+      gl: 'br',
+      safe: 'off',
+      api_key: SERPAPI_KEY,
+    });
+    const res = await fetch(`https://serpapi.com/search.json?${params}`, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const body = await res.json();
+        msg = body?.error?.message || msg;
+      } catch { /* ignore */ }
+      return { count: 0, found: null, error: `Erro SerpApi: ${msg}` };
+    }
+    const data = await res.json();
+    if (data?.error) {
+      return { count: 0, found: null, error: `Erro SerpApi: ${data.error}` };
+    }
+    const ads = Array.isArray(data?.ads) ? data.ads : [];
+    return { count: ads.length, found: ads.length > 0, error: null };
+  } catch (err: unknown) {
+    return { count: 0, found: null, error: `Erro SerpApi: ${(err as Error)?.message || 'timeout'}` };
+  }
+}
+
 async function verifyOne(item: Item): Promise<Verification> {
   const name = (item.businessName || '').trim();
   const website = (item.website || '').trim() || null;
+  const city = (item.city || '').trim() || undefined;
 
-  const [htmlHasAds, meta] = await Promise.all([
+  const [htmlHasAds, google, meta] = await Promise.all([
     checkHtmlTags(item.website || ''),
+    checkGoogleAdsSerpApi(name, city),
     checkMetaAds(name),
   ]);
 
   return {
     business_name: name,
     website,
-    has_ads: Boolean(htmlHasAds || meta.has_ads),
+    has_ads: Boolean(htmlHasAds || google.found || meta.has_ads),
+    google_ads_count: google.count,
     methods: {
       html_tags: htmlHasAds,
+      google_ads_serpapi: google.found,
       meta_ad_library: meta.has_ads,
     },
+    google_ads_error: google.error,
     meta_error: meta.error,
   };
 }

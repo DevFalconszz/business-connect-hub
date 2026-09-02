@@ -9,18 +9,20 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Auth() {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, loading, role } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const homePath = role === 'admin' ? '/dashboard' : '/';
+
   useEffect(() => {
     if (!loading && user) {
-      navigate('/', { replace: true });
+      navigate(homePath, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, homePath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ export default function Auth() {
         toast.error(error.message);
       } else {
         toast.success('Login realizado com sucesso!');
-        navigate('/', { replace: true });
+        navigate(homePath, { replace: true });
       }
     } finally {
       setSubmitting(false);

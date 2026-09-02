@@ -15,6 +15,7 @@ export interface StructuredResult {
   google_maps_url: string;
   has_website: boolean;
   has_ads: boolean;
+  google_ads_count?: number;
 }
 
 export interface SearchResponse {

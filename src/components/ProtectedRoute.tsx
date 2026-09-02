@@ -1,9 +1,10 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -15,6 +16,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Admin que acessa a raiz é levado direto ao Dashboard
+  if (role === 'admin' && location.pathname === '/') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
