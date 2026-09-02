@@ -174,7 +174,7 @@ export default function Prospecting() {
       phone: toStr(result.phone), website: toStr(result.website),
       google_maps_url: toStr(result.google_maps_url), rating: toStr(result.rating),
       reviews_count: toStr(result.reviews_count), instagram: toStr(result.instagram),
-      responsavel: responsavel, descricao: '', status: 'none',
+      responsavel: responsavel, descricao: '', status: 'analise_pendente',
       whatsapp_group: '', meeting_dates: [], nome_decisor: '', numero_decisor: '',
     };
 

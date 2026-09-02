@@ -37,7 +37,7 @@ export function AddLeadModal({ open, onClose, onAdd }: Props) {
       phone: form.phone || '', website: form.website || '', google_maps_url: '',
       rating: '', reviews_count: '', instagram: '',
       responsavel: form.responsavel || '', descricao: form.descricao || '',
-      status: 'none', whatsapp_group: '', meeting_dates: [],
+      status: 'analise_pendente', whatsapp_group: '', meeting_dates: [],
       nome_decisor: form.nome_decisor || '', numero_decisor: form.numero_decisor || '',
     });
     setForm({});

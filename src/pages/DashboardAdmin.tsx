@@ -26,7 +26,6 @@ import { fetchAdminLeads } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
-  none: '#9ca3af',
   analise_pendente: '#eab308',
   em_analise: '#f59e0b',
   follow_up: '#3b82f6',
@@ -42,7 +41,6 @@ const STATUS_ORDER: LeadStatus[] = [
   'reuniao_agendada',
   'venda_fechada',
   'recusado',
-  'none',
 ];
 
 const PALETTE = ['#eab308', '#3b82f6', '#22c55e', '#a855f7', '#f97316', '#ef4444', '#14b8a6', '#6366f1'];
@@ -88,7 +86,7 @@ export default function DashboardAdmin() {
       acc[l.status] = (acc[l.status] || 0) + 1;
       return acc;
     }, {});
-    const funilTotal = STATUS_ORDER.filter((s) => s !== 'none' && s !== 'recusado').reduce(
+    const funilTotal = STATUS_ORDER.filter((s) => s !== 'recusado').reduce(
       (acc, s) => acc + (statusCount[s] || 0),
       0,
     );
@@ -106,7 +104,7 @@ export default function DashboardAdmin() {
       const owner = l.owner_name || l.owner_email || 'Sem responsável';
       const cur = map.get(owner) || { owner, total: 0, funil: 0, vendas: 0 };
       cur.total += 1;
-      if (l.status !== 'none' && l.status !== 'recusado') cur.funil += 1;
+      if (l.status !== 'recusado') cur.funil += 1;
       if (l.status === 'venda_fechada') cur.vendas += 1;
       map.set(owner, cur);
     });

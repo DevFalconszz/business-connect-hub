@@ -51,7 +51,7 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
           <tbody>
             {leads.map((lead) => (
               <tr key={lead.id} className={`border-b border-border hover:bg-accent/40 transition-colors ${statusRowBg[lead.status] || ''}`}>
-                <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-medium whitespace-nowrap max-w-[200px] text-foreground" style={lead.status !== 'none' ? { backgroundColor: 'inherit' } : undefined}>
+                <td className="sticky left-0 z-10 bg-card px-3 py-1.5 font-medium whitespace-nowrap max-w-[200px] text-foreground">
                   <EditableCell value={lead.name} onChange={(v) => onUpdateLead({ ...lead, name: v })} className="font-medium w-[180px]" />
                 </td>
                 <td className="px-3 py-1.5">
