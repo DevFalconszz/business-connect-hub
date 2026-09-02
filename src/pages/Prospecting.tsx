@@ -74,7 +74,7 @@ export default function Prospecting() {
   const enrichResults = async (list: StructuredResult[]): Promise<StructuredResult[]> => {
     const items = list.map((r) => ({ name: r.name, website: r.website, phone: r.phone, city }));
     const [adsMap, phones] = await Promise.all([
-      detectAds(list.map((r) => ({ businessName: r.name, website: r.website, city }))),
+      detectAds(list.map((r) => ({ businessName: r.name, website: r.website, city, instagram: r.instagram }))),
       enrichPhones(items),
     ]);
     return list.map((r) => {

@@ -27,7 +27,7 @@ export interface AdsResult {
  * Retorna um mapa website|businessName -> { has_ads, google_ads_count }.
  */
 export async function detectAds(
-  items: { businessName?: string; website?: string; city?: string }[]
+  items: { businessName?: string; website?: string; city?: string; instagram?: string }[]
 ): Promise<Record<string, AdsResult>> {
   const map: Record<string, AdsResult> = {};
   try {

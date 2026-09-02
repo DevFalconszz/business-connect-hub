@@ -39,6 +39,7 @@ interface Item {
   businessName?: string;
   website?: string;
   city?: string;
+  instagram?: string;
 }
 
 interface Verification {
@@ -53,6 +54,7 @@ interface Verification {
   };
   google_ads_error: string | null;
   meta_error: string | null;
+  meta_search_term: string | null;
 }
 
 // Padrões que indicam presença de anúncios/tracking no HTML (mesmos do detector Python).
@@ -113,12 +115,12 @@ async function checkHtmlTags(website: string | undefined): Promise<boolean> {
   return AD_PATTERNS.some((p) => p.test(html));
 }
 
-async function checkMetaAds(businessName: string): Promise<{ has_ads: boolean | null; error: string | null }> {
+async function checkMetaAds(searchTerm: string): Promise<{ has_ads: boolean | null; error: string | null }> {
   const token = Deno.env.get('META_ACCESS_TOKEN');
-  if (!token || !businessName) return { has_ads: null, error: !token ? 'META_ACCESS_TOKEN não configurado (pulado)' : null };
+  if (!token || !searchTerm) return { has_ads: null, error: !token ? 'META_ACCESS_TOKEN não configurado (pulado)' : null };
   try {
     const params = new URLSearchParams({
-      search_terms: businessName,
+      search_terms: searchTerm,
       search_type: 'KEYWORD_UNORDERED',
       ad_reached_countries: JSON.stringify(['BR']),
       fields: 'id',
@@ -188,11 +190,15 @@ async function verifyOne(item: Item): Promise<Verification> {
   const name = (item.businessName || '').trim();
   const website = (item.website || '').trim() || null;
   const city = (item.city || '').trim() || undefined;
+  const instagram = (item.instagram || '').trim().replace(/^@/, '');
+
+  // Prioridade do termo de busca na Meta Ad Library: Instagram > nome do negócio.
+  const metaSearchTerm = instagram || name;
 
   const [htmlHasAds, google, meta] = await Promise.all([
     checkHtmlTags(item.website || ''),
     checkGoogleAdsSerpApi(name, city),
-    checkMetaAds(name),
+    checkMetaAds(metaSearchTerm),
   ]);
 
   return {
@@ -207,6 +213,7 @@ async function verifyOne(item: Item): Promise<Verification> {
     },
     google_ads_error: google.error,
     meta_error: meta.error,
+    meta_search_term: metaSearchTerm,
   };
 }
 
