@@ -7,12 +7,12 @@ interface Props {
 }
 
 const statusStyles: Record<string, string> = {
-  analise_pendente: 'bg-gold-500/15 text-gold-400',
-  em_analise: 'bg-gold-500/15 text-gold-400',
-  follow_up: 'bg-gold-500/15 text-gold-400',
-  reuniao_agendada: 'bg-gold-500/15 text-gold-400',
+  analise_pendente: 'bg-amber-500/15 text-amber-400',
+  em_analise: 'bg-orange-500/15 text-orange-400',
+  follow_up: 'bg-sky-500/15 text-sky-400',
+  reuniao_agendada: 'bg-violet-500/15 text-violet-400',
   recusado: 'bg-red-500/15 text-red-400',
-  venda_fechada: 'bg-gold-500/15 text-gold-400',
+  venda_fechada: 'bg-emerald-500/15 text-emerald-400',
 };
 
 const STATUSES: LeadStatus[] = [

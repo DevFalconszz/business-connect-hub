@@ -1,12 +1,12 @@
 import { LeadStatus, STATUS_LABELS } from '@/lib/types';
 
 const config: Record<LeadStatus, { label: string; bg: string; text: string }> = {
-  analise_pendente: { label: STATUS_LABELS.analise_pendente, bg: 'bg-gold-500/15', text: 'text-gold-400' },
-  em_analise: { label: STATUS_LABELS.em_analise, bg: 'bg-gold-500/15', text: 'text-gold-400' },
-  follow_up: { label: STATUS_LABELS.follow_up, bg: 'bg-gold-500/15', text: 'text-gold-400' },
-  reuniao_agendada: { label: STATUS_LABELS.reuniao_agendada, bg: 'bg-gold-500/15', text: 'text-gold-400' },
+  analise_pendente: { label: STATUS_LABELS.analise_pendente, bg: 'bg-amber-500/15', text: 'text-amber-400' },
+  em_analise: { label: STATUS_LABELS.em_analise, bg: 'bg-orange-500/15', text: 'text-orange-400' },
+  follow_up: { label: STATUS_LABELS.follow_up, bg: 'bg-sky-500/15', text: 'text-sky-400' },
+  reuniao_agendada: { label: STATUS_LABELS.reuniao_agendada, bg: 'bg-violet-500/15', text: 'text-violet-400' },
   recusado: { label: STATUS_LABELS.recusado, bg: 'bg-red-500/15', text: 'text-red-400' },
-  venda_fechada: { label: STATUS_LABELS.venda_fechada, bg: 'bg-gold-500/15', text: 'text-gold-400' },
+  venda_fechada: { label: STATUS_LABELS.venda_fechada, bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
 };
 
 export function StatusBadge({ status }: { status: LeadStatus }) {

@@ -26,12 +26,12 @@ import { fetchAdminLeads } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
-  analise_pendente: '#eab308',
-  em_analise: '#f59e0b',
-  follow_up: '#3b82f6',
-  reuniao_agendada: '#a855f7',
+  analise_pendente: '#f59e0b',
+  em_analise: '#f97316',
+  follow_up: '#0ea5e9',
+  reuniao_agendada: '#8b5cf6',
   recusado: '#ef4444',
-  venda_fechada: '#22c55e',
+  venda_fechada: '#10b981',
 };
 
 const STATUS_ORDER: LeadStatus[] = [

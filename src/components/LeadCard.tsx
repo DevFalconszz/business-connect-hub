@@ -13,12 +13,12 @@ interface Props {
 }
 
 const statusCardBorder: Record<string, string> = {
-  analise_pendente: 'border-l-4 border-l-gold-500',
-  em_analise: 'border-l-4 border-l-gold-500',
-  follow_up: 'border-l-4 border-l-gold-500',
-  reuniao_agendada: 'border-l-4 border-l-gold-500',
+  analise_pendente: 'border-l-4 border-l-amber-500',
+  em_analise: 'border-l-4 border-l-orange-500',
+  follow_up: 'border-l-4 border-l-sky-500',
+  reuniao_agendada: 'border-l-4 border-l-violet-500',
   recusado: 'border-l-4 border-l-red-500',
-  venda_fechada: 'border-l-4 border-l-gold-500',
+  venda_fechada: 'border-l-4 border-l-emerald-500',
 };
 
 export function LeadCard({ lead, onOpenLead, onUpdateLead, onDeleteLead }: Props) {

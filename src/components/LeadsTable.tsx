@@ -12,12 +12,12 @@ interface Props {
 }
 
 const statusRowBg: Record<string, string> = {
-  analise_pendente: 'bg-gold-500/[0.08]',
-  em_analise: 'bg-gold-500/[0.08]',
-  follow_up: 'bg-gold-500/[0.08]',
-  reuniao_agendada: 'bg-gold-500/[0.08]',
+  analise_pendente: 'bg-amber-500/[0.06]',
+  em_analise: 'bg-orange-500/[0.06]',
+  follow_up: 'bg-sky-500/[0.06]',
+  reuniao_agendada: 'bg-violet-500/[0.06]',
   recusado: 'bg-red-500/[0.08]',
-  venda_fechada: 'bg-gold-500/[0.08]',
+  venda_fechada: 'bg-emerald-500/[0.06]',
 };
 
 function EditableCell({ value, onChange, className = '' }: { value: string; onChange: (v: string) => void; className?: string }) {

@@ -17,7 +17,7 @@ import { Colors, Font, Radius, Spacing } from '../../lib/theme';
 import { useCRMAlert } from '../../lib/crm-alert';
 
 const STATUSES: LeadStatus[] = [
-  'none', 'analise_pendente', 'em_analise', 'follow_up',
+  'analise_pendente', 'em_analise', 'follow_up',
   'reuniao_agendada', 'recusado', 'venda_fechada'
 ];
 

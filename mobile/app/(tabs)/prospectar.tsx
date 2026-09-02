@@ -101,7 +101,7 @@ export default function ProspectingScreen() {
       instagram: '',
       responsavel,
       descricao: '',
-      status: 'none',
+      status: 'analise_pendente',
       whatsapp_group: '',
       meeting_dates: [],
       nome_decisor: '',
