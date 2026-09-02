@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead } from '@/lib/types';
-import { parseFile } from '@/lib/csv-parser';
-import { loadLeads, insertLead, insertLeads, updateLead, deleteLead } from '@/lib/leads-store';
+import { loadLeads, insertLead, updateLead, deleteLead } from '@/lib/leads-store';
 import { LeadsTable } from '@/components/LeadsTable';
 import { LeadCard } from '@/components/LeadCard';
 import { LeadModal } from '@/components/LeadModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
-import { Upload, Plus, Search, LayoutGrid, Table2, Loader2 } from 'lucide-react';
+import { Plus, Search, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { detectEnv } from '@/lib/env-check';
@@ -20,7 +19,6 @@ const Index = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const fileRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => { if (isMobile) setViewMode('cards'); }, [isMobile]);
@@ -30,27 +28,6 @@ const Index = () => {
       loadLeads().then(data => { setLeads(data); setLoading(false); });
     });
   }, []);
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const { leads: parsed, errors, totalRows } = await parseFile(file);
-    if (errors.length > 0) {
-      errors.forEach(err => toast.error(err, { duration: 8000 }));
-    }
-    if (parsed.length === 0 && totalRows > 0) {
-      toast.error('Nenhum lead válido encontrado no arquivo.');
-    } else if (parsed.length > 0) {
-      const inserted = await insertLeads(parsed);
-      if (inserted.length > 0) {
-        setLeads(prev => [...inserted, ...prev]);
-        toast.success(`${inserted.length} de ${totalRows} leads importados com sucesso!`);
-      } else {
-        toast.error('Erro ao salvar leads no banco de dados.');
-      }
-    }
-    e.target.value = '';
-  };
 
   const handleUpdateLead = useCallback(async (updated: Lead) => {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
@@ -101,10 +78,6 @@ const Index = () => {
               <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'cards' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
               <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'table' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
             </div>
-            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleUpload} />
-            <Button variant="outline" className="h-11 rounded-xl px-4 text-sm border-input hover:border-gold-500 hover:text-gold-500" onClick={() => fileRef.current?.click()}>
-              <Upload className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Upload</span><span className="sm:hidden">CSV</span>
-            </Button>
             <Button className="h-11 rounded-xl px-4 text-sm bg-gold-500 text-black hover:bg-gold-600" onClick={() => setShowAdd(true)}>
               <Plus className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Adicionar</span><span className="sm:hidden">Novo</span>
             </Button>
@@ -126,7 +99,7 @@ const Index = () => {
             {filtered.length === 0 && (
               <div className="col-span-full text-center py-16 text-muted-foreground">
                 <p className="text-lg font-medium text-foreground">Nenhum lead encontrado</p>
-                <p className="text-sm mt-1">Faça upload de uma planilha ou adicione manualmente.</p>
+                <p className="text-sm mt-1">Adicione novos leads pela tela de Prospecção.</p>
               </div>
             )}
           </div>

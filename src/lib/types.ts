@@ -32,3 +32,17 @@ export interface Lead {
   nome_decisor: string;
   numero_decisor: string;
 }
+
+export interface AdminLead extends Lead {
+  user_id: string | null;
+  owner_email: string | null;
+  owner_name: string | null;
+  created_at: string;
+}
+
+export type DashboardView =
+  | 'geral'
+  | 'por_usuario'
+  | 'por_status'
+  | 'por_nicho'
+  | 'por_estado';

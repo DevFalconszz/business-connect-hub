@@ -93,7 +93,7 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
       {leads.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-lg font-medium text-foreground">Nenhum lead encontrado</p>
-          <p className="text-sm mt-1">Faça upload de uma planilha ou adicione manualmente.</p>
+          <p className="text-sm mt-1">Adicione novos leads pela tela de Prospecção.</p>
         </div>
       )}
     </div>
