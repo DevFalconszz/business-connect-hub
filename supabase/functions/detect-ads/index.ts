@@ -55,6 +55,7 @@ interface Verification {
   google_ads_error: string | null;
   meta_error: string | null;
   meta_search_term: string | null;
+  instagram_found: string;
 }
 
 // Padrões que indicam presença de anúncios/tracking no HTML (mesmos do detector Python).
@@ -113,6 +114,19 @@ async function checkHtmlTags(website: string | undefined): Promise<boolean> {
   const html = await fetchHtml(website!, 7000);
   if (!html) return false;
   return AD_PATTERNS.some((p) => p.test(html));
+}
+
+// Extrai o handle do Instagram a partir do HTML do site do negócio.
+// Prefere o handle "legível" (ex: padariabellapaulista) ao ID numérico da página
+// (ex: 17841401967636565), que é apenas o ID interno.
+function extractInstagramFromHtml(html: string): string {
+  if (!html) return '';
+  const handles = Array.from(
+    html.matchAll(/instagram\.com\/(?:@)?([A-Za-z0-9_][A-Za-z0-9_.]{2,})/gi),
+    (m) => m[1].replace(/[.\/?#].*$/, ''),
+  );
+  const readable = handles.find((h) => !/^\d+$/.test(h));
+  return readable || '';
 }
 
 async function checkMetaAds(searchTerm: string): Promise<{ has_ads: boolean | null; error: string | null }> {
@@ -190,13 +204,21 @@ async function verifyOne(item: Item): Promise<Verification> {
   const name = (item.businessName || '').trim();
   const website = (item.website || '').trim() || null;
   const city = (item.city || '').trim() || undefined;
-  const instagram = (item.instagram || '').trim().replace(/^@/, '');
+
+  // Instagram vindo do payload (ex: detectado pelo SerpAPI na prospecção).
+  let instagram = (item.instagram || '').trim().replace(/^@/, '');
+
+  // Se não veio Instagram, varre o site do negócio em busca do link do Instagram.
+  const siteHtml = isRealOwnWebsite(website) ? await fetchHtml(website, 7000) : '';
+  if (!instagram && siteHtml) {
+    instagram = extractInstagramFromHtml(siteHtml);
+  }
 
   // Prioridade do termo de busca na Meta Ad Library: Instagram > nome do negócio.
   const metaSearchTerm = instagram || name;
+  const htmlHasAds = siteHtml ? AD_PATTERNS.some((p) => p.test(siteHtml)) : false;
 
-  const [htmlHasAds, google, meta] = await Promise.all([
-    checkHtmlTags(item.website || ''),
+  const [google, meta] = await Promise.all([
     checkGoogleAdsSerpApi(name, city),
     checkMetaAds(metaSearchTerm),
   ]);
@@ -214,6 +236,7 @@ async function verifyOne(item: Item): Promise<Verification> {
     google_ads_error: google.error,
     meta_error: meta.error,
     meta_search_term: metaSearchTerm,
+    instagram_found: instagram,
   };
 }
 

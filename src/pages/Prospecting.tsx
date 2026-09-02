@@ -13,7 +13,7 @@ import { enrichPhones } from '@/lib/enrich-phone';
 import { loadLeads, insertLead } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { searchLeadsPaged } from '@/lib/search-paged';
-import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff, Megaphone } from 'lucide-react';
+import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff, Megaphone, Instagram } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
 import { inferUf } from '@/lib/uf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -85,6 +85,8 @@ export default function Prospecting() {
         ...r,
         has_ads: ads?.has_ads ?? r.has_ads,
         google_ads_count: ads?.google_ads_count,
+        meta_has_ads: ads?.meta_has_ads,
+        instagram_found: ads?.instagram_found || r.instagram,
         phone: newPhone && newPhone !== r.phone ? newPhone : r.phone,
       };
     });
@@ -255,7 +257,8 @@ export default function Prospecting() {
                       <TableHead className="text-muted-foreground font-semibold">UF</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Telefone</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Site</TableHead>
-                      <TableHead className="text-muted-foreground font-semibold">Google Ads</TableHead>
+                      <TableHead className="text-muted-foreground font-semibold">Ads Google</TableHead>
+                      <TableHead className="text-muted-foreground font-semibold">Ads Meta</TableHead>
                       <TableHead className="text-muted-foreground font-semibold">Verificar Anúncios</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -293,6 +296,26 @@ export default function Prospecting() {
                             )
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {result.meta_has_ads != null ? (
+                            result.meta_has_ads ? (
+                              <Badge variant="outline" className="text-xs gap-1 border-violet-500/40 text-violet-600 bg-violet-500/10">
+                                <Instagram className="w-3 h-3" />Tem anúncio
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs gap-1 border-border text-muted-foreground">
+                                <Instagram className="w-3 h-3" />Sem anúncio
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-xs text-muted-foreground" title={result.instagram_found ? `Instagram: @${result.instagram_found}` : 'Sem Instagram detectado'}>
+                              {result.instagram_found ? '—' : 'n/d'}
+                            </span>
+                          )}
+                          {result.instagram_found && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">@{result.instagram_found}</p>
                           )}
                         </TableCell>
                         <TableCell>

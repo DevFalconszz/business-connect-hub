@@ -16,6 +16,8 @@ export interface StructuredResult {
   has_website: boolean;
   has_ads: boolean;
   google_ads_count?: number;
+  meta_has_ads?: boolean | null;
+  instagram_found?: string;
 }
 
 export interface SearchResponse {

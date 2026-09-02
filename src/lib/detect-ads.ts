@@ -12,11 +12,16 @@ export interface AdsVerification {
   };
   google_ads_error: string | null;
   meta_error: string | null;
+  meta_search_term: string | null;
+  instagram_found: string;
 }
 
 export interface AdsResult {
   has_ads: boolean;
   google_ads_count: number;
+  meta_has_ads: boolean | null;
+  instagram_found: string;
+  meta_search_term: string;
 }
 
 /**
@@ -45,6 +50,9 @@ export async function detectAds(
       map[r.website || r.business_name] = {
         has_ads: r.has_ads,
         google_ads_count: r.google_ads_count ?? 0,
+        meta_has_ads: r.methods?.meta_ad_library ?? null,
+        instagram_found: r.instagram_found || '',
+        meta_search_term: r.meta_search_term || '',
       };
     }
   } catch (err) {
