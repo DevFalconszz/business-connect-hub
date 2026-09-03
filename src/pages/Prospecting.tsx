@@ -310,9 +310,9 @@ export default function Prospecting() {
                               </Badge>
                             )
                           ) : (
-                            <span className="text-xs text-muted-foreground" title={result.instagram_found ? `Instagram: @${result.instagram_found}` : 'Sem Instagram detectado'}>
-                              {result.instagram_found ? '—' : 'n/d'}
-                            </span>
+                            <Badge variant="outline" className="text-xs gap-1 border-border text-muted-foreground" title="Verificação manual via Ad Library">
+                              <Instagram className="w-3 h-3" />Por verificar
+                            </Badge>
                           )}
                           {result.instagram_found && (
                             <p className="text-[10px] text-muted-foreground mt-0.5">@{result.instagram_found}</p>

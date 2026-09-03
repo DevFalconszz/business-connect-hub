@@ -7,9 +7,10 @@
  *  2. Google Ads via SerpApi (engine=google): consulta se o negócio aparece em
  *     anúncios patrocinados no Google e retorna a quantidade de anúncios.
  *     Requer o secret `SERPAPI_KEY` (com fallback legado para compatibilidade).
- *  3. Meta Ad Library API (oficial, gratuita): consulta anúncios ativos por nome
- *     do negócio. Requer o secret `META_ACCESS_TOKEN` (um token de usuário com
- *     acesso à ferramenta de pesquisa da Ad Library).
+ *  3. Meta Ad Library: a verificação de anúncios da Meta é feita MANUALMENTE
+ *     via interface web da Ad Library (o botão "Ver na Ad Library" abre a busca
+ *     com o Instagram/nome). A API oficial não retorna anúncios comerciais de
+ *     qualquer país, então este método não é tentado automaticamente.
  *
  * Se os tokens não estiverem configurados (ou estiverem inválidos), as
  * verificações correspondentes são puladas (retornam null) e o resultado se
@@ -129,34 +130,22 @@ function extractInstagramFromHtml(html: string): string {
   return readable || '';
 }
 
+/**
+ * Detecção de anúncios na Meta Ad Library.
+ *
+ * A API oficial (graph.facebook.com/ads_archive) não retorna anúncios comerciais
+ * de qualquer país (só anúncios políticos mundialmente e comerciais veiculados
+ * na UE/Reino Unido), e exige verificação de identidade/registro do app.
+ * Portanto, a verificação da Meta é feita de forma MANUAL via interface web da
+ * Ad Library (o botão "Ver na Ad Library" abre a busca com o Instagram/nome).
+ * Este método retorna null (não tentado automaticamente) para não gerar erros.
+ */
 async function checkMetaAds(searchTerm: string): Promise<{ has_ads: boolean | null; error: string | null }> {
-  const token = Deno.env.get('META_ACCESS_TOKEN');
-  if (!token || !searchTerm) return { has_ads: null, error: !token ? 'META_ACCESS_TOKEN não configurado (pulado)' : null };
-  try {
-    const params = new URLSearchParams({
-      search_terms: searchTerm,
-      search_type: 'KEYWORD_UNORDERED',
-      ad_reached_countries: JSON.stringify(['BR']),
-      fields: 'id',
-      limit: '3',
-      access_token: token,
-    });
-    const res = await fetch(`https://graph.facebook.com/v19.0/ads_archive?${params}`, {
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try {
-        const body = await res.json();
-        msg = body?.error?.message || msg;
-      } catch { /* ignore */ }
-      return { has_ads: null, error: `Erro Meta: ${msg}` };
-    }
-    const data = await res.json();
-    return { has_ads: (data.data || []).length > 0, error: null };
-  } catch (err: unknown) {
-    return { has_ads: null, error: `Erro Meta: ${(err as Error)?.message || 'timeout'}` };
-  }
+  if (!searchTerm) return { has_ads: null, error: null };
+  return {
+    has_ads: null,
+    error: 'Verificação Meta feita manualmente via UI da Ad Library',
+  };
 }
 
 async function checkGoogleAdsSerpApi(
