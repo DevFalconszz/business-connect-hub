@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key } from 'lucide-react';
+import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,8 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AdminLead, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary } from '@/lib/types';
-import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary } from '@/lib/dashboard-api';
+import { Button } from '@/components/ui/button';
+import { AdminLead, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage } from '@/lib/types';
+import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary, fetchSerpapiUsage, triggerSerpapiSync } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -66,6 +67,8 @@ export default function DashboardAdmin() {
   const [apiSummary, setApiSummary] = useState<ApiUsageSummary | null>(null);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiDays, setApiDays] = useState(7);
+  const [serpapiUsage, setSerpapiUsage] = useState<SerpapiAccountUsage[]>([]);
+  const [serpapiSyncing, setSerpapiSyncing] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -85,12 +88,14 @@ export default function DashboardAdmin() {
       (async () => {
         setApiLoading(true);
         try {
-          const [stats, summary] = await Promise.all([
+          const [stats, summary, serpapi] = await Promise.all([
             fetchApiUsageStats(apiDays),
             fetchApiUsageSummary(apiDays),
+            fetchSerpapiUsage(),
           ]);
           setApiStats(stats);
           setApiSummary(summary);
+          setSerpapiUsage(serpapi);
         } catch (e: any) {
           toast.error(e?.message || 'Erro ao carregar estatísticas de API.');
         } finally {
@@ -99,6 +104,24 @@ export default function DashboardAdmin() {
       })();
     }
   }, [view, apiDays]);
+
+  const runSerpapiSync = async () => {
+    setSerpapiSyncing(true);
+    try {
+      const ok = await triggerSerpapiSync();
+      if (!ok) {
+        toast.error('Falha ao sincronizar o uso das chaves SerpAPI.');
+      } else {
+        const serpapi = await fetchSerpapiUsage();
+        setSerpapiUsage(serpapi);
+        toast.success('Uso das chaves SerpAPI sincronizado.');
+      }
+    } catch {
+      toast.error('Falha ao sincronizar o uso das chaves SerpAPI.');
+    } finally {
+      setSerpapiSyncing(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const uniqueOwners = new Set<string>();
@@ -410,17 +433,28 @@ export default function DashboardAdmin() {
                 <Activity className="w-4 h-4 text-gold-500" />
                 Monitoramento de uso das chaves SerpAPI
               </div>
-              <Select value={String(apiDays)} onValueChange={(v) => setApiDays(Number(v))}>
-                <SelectTrigger className="w-36 h-10 rounded-xl border-input bg-card focus:border-gold-500 focus:ring-gold-500">
-                  <SelectValue placeholder="Período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Últimas 24h</SelectItem>
-                  <SelectItem value="7">Últimos 7 dias</SelectItem>
-                  <SelectItem value="15">Últimos 15 dias</SelectItem>
-                  <SelectItem value="30">Últimos 30 dias</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={runSerpapiSync}
+                  disabled={serpapiSyncing}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-1 ${serpapiSyncing ? 'animate-spin' : ''}`} />
+                  Sincronizar agora
+                </Button>
+                <Select value={String(apiDays)} onValueChange={(v) => setApiDays(Number(v))}>
+                  <SelectTrigger className="w-36 h-10 rounded-xl border-input bg-card focus:border-gold-500 focus:ring-gold-500">
+                    <SelectValue placeholder="Período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Últimas 24h</SelectItem>
+                    <SelectItem value="7">Últimos 7 dias</SelectItem>
+                    <SelectItem value="15">Últimos 15 dias</SelectItem>
+                    <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {apiLoading ? (
@@ -429,6 +463,71 @@ export default function DashboardAdmin() {
               </div>
             ) : (
               <>
+                {serpapiUsage.length > 0 && (
+                  <div className="grid lg:grid-cols-2 gap-4">
+                    {serpapiUsage.map((acc) => {
+                      const total = acc.searches_per_month || 0;
+                      const used = acc.this_month_usage ?? 0;
+                      const left = acc.total_searches_left ?? 0;
+                      const pct = total > 0 ? Math.round((used / total) * 100) : 0;
+                      const pctLeft = total > 0 ? Math.round((left / total) * 100) : 0;
+                      const usedColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#22c55e';
+                      return (
+                        <Card key={acc.key_index} className="border-border bg-card shadow-sm">
+                          <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                            <div>
+                              <CardTitle className="text-sm font-semibold text-foreground">
+                                {acc.key_index === 0 ? 'Chave Principal' : 'Chave Fallback'}
+                              </CardTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5 break-all">{acc.account_email}</p>
+                            </div>
+                            <Badge variant={acc.key_index === 0 ? 'default' : 'secondary'} className="text-xs">
+                              {acc.plan_name || '—'}
+                            </Badge>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-baseline justify-between">
+                              <p className="text-3xl font-bold text-foreground">
+                                {used}<span className="text-lg text-muted-foreground font-medium"> / {total}</span>
+                              </p>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Restantes</p>
+                                <p className="text-xl font-bold text-foreground">{left}</p>
+                              </div>
+                            </div>
+                            <div className="mt-3 h-3 w-full rounded-full bg-accent overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${Math.min(100, pct)}%`, backgroundColor: usedColor }}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between mt-2 text-xs">
+                              <span className="text-muted-foreground">{pct}% utilizado</span>
+                              <span className="text-muted-foreground">{pctLeft}% restante</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                              <span className="text-xs text-muted-foreground">Renova em</span>
+                              <span className="text-xs font-medium text-foreground">
+                                {acc.plan_renewal_date
+                                  ? new Date(acc.plan_renewal_date + 'T00:00:00').toLocaleDateString('pt-BR')
+                                  : '—'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs text-muted-foreground">Atualizado</span>
+                              <span className="text-xs font-medium text-foreground">
+                                {acc.fetched_at
+                                  ? new Date(acc.fetched_at).toLocaleString('pt-BR')
+                                  : '—'}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {apiSummary && (
                   <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                     <Card className="border-border bg-card shadow-sm">

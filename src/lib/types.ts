@@ -67,3 +67,21 @@ export interface ApiUsageSummary {
   primary_key_usage: number;
   fallback_key_usage: number;
 }
+
+export interface SerpapiAccountUsage {
+  key_index: number;
+  account_email: string;
+  plan_name: string;
+  searches_per_month: number;
+  plan_searches_left: number;
+  total_searches_left: number;
+  this_month_usage: number;
+  plan_renewal_date: string;
+  fetched_at: string;
+}
+
+export interface SerpapiUsagePoint {
+  fetched_at: string;
+  this_month_usage: number;
+  total_searches_left: number;
+}
