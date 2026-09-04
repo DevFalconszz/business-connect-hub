@@ -19,7 +19,58 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SERPAPI_KEY = Deno.env.get("SERPAPI_KEY") || "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103";
+const SERPAPI_KEYS = [
+  Deno.env.get("SERPAPI_KEY") || "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103",
+  Deno.env.get("SERPAPI_KEY_FALLBACK") || "360c724634183f614ce89b4de464b50d88c88eca8f2774d5ac53ac056bc0f91c",
+];
+
+let currentKeyIndex = 0;
+
+function getActiveKey(): string {
+  return SERPAPI_KEYS[currentKeyIndex] || SERPAPI_KEYS[0];
+}
+
+function rotateKey(): string {
+  currentKeyIndex = (currentKeyIndex + 1) % SERPAPI_KEYS.length;
+  console.log(`[fallback] Rotating to SerpAPI key index ${currentKeyIndex}`);
+  return getActiveKey();
+}
+
+function isRateLimited(res: Response): boolean {
+  return res.status === 429 || res.status === 403;
+}
+
+async function logApiUsage(
+  endpoint: string,
+  keyIndex: number,
+  status: 'success' | 'error' | 'rate_limited',
+  httpCode: number,
+  detail?: string,
+) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) return;
+    await fetch(`${supabaseUrl}/rest/v1/api_usage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        endpoint,
+        key_index: keyIndex,
+        status,
+        http_code: httpCode,
+        detail: detail || null,
+      }),
+    });
+  } catch {
+    // best effort — don't break the main flow
+  }
+}
 
 const COORDS: Record<string, string> = {
   "sao paulo": "@-23.5505,-46.6333,12z",
@@ -93,47 +144,90 @@ async function checkUrlExists(url: string, ms: number): Promise<boolean> {
   }
 }
 
-async function serpSearch(niche: string, city: string, start: number, num: number) {
+async function serpSearchWithFallback(niche: string, city: string, start: number, num: number) {
   const ll = COORDS[city.trim().toLowerCase()] || '@-23.5505,-46.6333,12z';
-  const params = new URLSearchParams({
-    q: `${niche} ${city} Brazil`,
-    engine: 'google_maps',
-    type: 'search',
-    ll,
-    hl: 'pt-br',
-    num: String(num),
-    start: String(start),
-    api_key: SERPAPI_KEY,
-  });
-  const res = await fetch(`https://serpapi.com/search.json?${params}`, {
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!res.ok) throw new Error(`SerpApi HTTP ${res.status}`);
-  return await res.json();
+
+  for (let attempt = 0; attempt < SERPAPI_KEYS.length; attempt++) {
+    const key = getActiveKey();
+    const idx = currentKeyIndex;
+    const params = new URLSearchParams({
+      q: `${niche} ${city} Brazil`,
+      engine: 'google_maps',
+      type: 'search',
+      ll,
+      hl: 'pt-br',
+      num: String(num),
+      start: String(start),
+      api_key: key,
+    });
+
+    const res = await fetch(`https://serpapi.com/search.json?${params}`, {
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (res.ok) {
+      await logApiUsage('search-leads-paged/search', idx, 'success', res.status);
+      return await res.json();
+    }
+
+    if (isRateLimited(res)) {
+      await logApiUsage('search-leads-paged/search', idx, 'rate_limited', res.status);
+      rotateKey();
+      continue;
+    }
+
+    await logApiUsage('search-leads-paged/search', idx, 'error', res.status);
+    throw new Error(`SerpApi HTTP ${res.status}`);
+  }
+
+  throw new Error('Todas as chaves SerpAPI esgotadas');
 }
 
+// Alias para manter compatibilidade com código existente
+const serpSearch = serpSearchWithFallback;
+
 // 1 busca SerpAPI por cada ficha de local aberta (type=place).
-async function serpPlace(placeId: string, dataId: string, lat: string, lng: string) {
-  const params = new URLSearchParams({
-    engine: 'google_maps',
-    type: 'place',
-    hl: 'pt-br',
-    api_key: SERPAPI_KEY,
-  });
-  if (placeId) {
-    params.set('place_id', placeId);
-  } else if (dataId) {
-    // formato exigido: !4m5!3m4!1s{data_id}!8m2!3d{lat}!4d{lng}
-    params.set('data', `!4m5!3m4!1s${dataId}!8m2!3d${lat}!4d${lng}`);
-  } else {
+async function serpPlaceWithFallback(placeId: string, dataId: string, lat: string, lng: string) {
+  for (let attempt = 0; attempt < SERPAPI_KEYS.length; attempt++) {
+    const key = getActiveKey();
+    const idx = currentKeyIndex;
+    const params = new URLSearchParams({
+      engine: 'google_maps',
+      type: 'place',
+      hl: 'pt-br',
+      api_key: key,
+    });
+    if (placeId) {
+      params.set('place_id', placeId);
+    } else if (dataId) {
+      params.set('data', `!4m5!3m4!1s${dataId}!8m2!3d${lat}!4d${lng}`);
+    } else {
+      return null;
+    }
+
+    const res = await fetch(`https://serpapi.com/search.json?${params}`, {
+      signal: AbortSignal.timeout(20_000),
+    });
+
+    if (res.ok) {
+      await logApiUsage('search-leads-paged/place', idx, 'success', res.status);
+      return await res.json();
+    }
+
+    if (isRateLimited(res)) {
+      await logApiUsage('search-leads-paged/place', idx, 'rate_limited', res.status);
+      rotateKey();
+      continue;
+    }
+
+    await logApiUsage('search-leads-paged/place', idx, 'error', res.status);
     return null;
   }
-  const res = await fetch(`https://serpapi.com/search.json?${params}`, {
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!res.ok) return null;
-  return await res.json();
+
+  return null;
 }
+
+const serpPlace = serpPlaceWithFallback;
 
 function mapPlace(p: Record<string, unknown>): Record<string, unknown> {
   const name = String(p.title || p.name || '').trim();
@@ -190,7 +284,7 @@ serve(async (req: Request): Promise<Response> => {
     const num = Math.min(20, Math.max(5, Number(body?.num) || 20));
 
     if (!niche || !city) return json({ success: false, error: 'Niche e cidade são obrigatórios' }, 400);
-    if (!SERPAPI_KEY) return json({ success: false, error: 'SERPAPI_KEY não configurada' }, 500);
+    if (!SERPAPI_KEYS.length) return json({ success: false, error: 'SERPAPI_KEY não configurada' }, 500);
 
     const start = (page - 1) * num;
     const data = await serpSearch(niche, city, start, num);

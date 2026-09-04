@@ -44,4 +44,26 @@ export type DashboardView =
   | 'por_usuario'
   | 'por_status'
   | 'por_nicho'
-  | 'por_estado';
+  | 'por_estado'
+  | 'api_usage';
+
+export interface ApiUsageStats {
+  endpoint: string;
+  key_index: number;
+  total_calls: number;
+  success_count: number;
+  error_count: number;
+  rate_limited_count: number;
+  success_rate: number;
+  last_used: string;
+}
+
+export interface ApiUsageSummary {
+  total_calls: number;
+  success_count: number;
+  error_count: number;
+  rate_limited_count: number;
+  success_rate: number;
+  primary_key_usage: number;
+  fallback_key_usage: number;
+}

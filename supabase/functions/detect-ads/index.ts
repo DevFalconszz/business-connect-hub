@@ -25,9 +25,58 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type',
 };
 
-const SERPAPI_KEY =
-  Deno.env.get("SERPAPI_KEY") ||
-  "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103";
+const SERPAPI_KEYS = [
+  Deno.env.get("SERPAPI_KEY") || "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103",
+  Deno.env.get("SERPAPI_KEY_FALLBACK") || "360c724634183f614ce89b4de464b50d88c88eca8f2774d5ac53ac056bc0f91c",
+];
+
+let currentKeyIndex = 0;
+
+function getActiveKey(): string {
+  return SERPAPI_KEYS[currentKeyIndex] || SERPAPI_KEYS[0];
+}
+
+function rotateKey(): string {
+  currentKeyIndex = (currentKeyIndex + 1) % SERPAPI_KEYS.length;
+  console.log(`[fallback] Rotating to SerpAPI key index ${currentKeyIndex}`);
+  return getActiveKey();
+}
+
+function isRateLimited(res: Response): boolean {
+  return res.status === 429 || res.status === 403;
+}
+
+async function logApiUsage(
+  endpoint: string,
+  keyIndex: number,
+  status: 'success' | 'error' | 'rate_limited',
+  httpCode: number,
+  detail?: string,
+) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) return;
+    await fetch(`${supabaseUrl}/rest/v1/api_usage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        endpoint,
+        key_index: keyIndex,
+        status,
+        http_code: httpCode,
+        detail: detail || null,
+      }),
+    });
+  } catch {
+    // best effort
+  }
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -152,41 +201,60 @@ async function checkGoogleAdsSerpApi(
   businessName: string,
   city?: string,
 ): Promise<{ count: number; found: boolean | null; error: string | null }> {
-  if (!SERPAPI_KEY || !businessName) {
-    return { count: 0, found: null, error: !SERPAPI_KEY ? 'SERPAPI_KEY não configurado (pulado)' : null };
+  if (!SERPAPI_KEYS.length || !businessName) {
+    return { count: 0, found: null, error: !SERPAPI_KEYS.length ? 'SERPAPI_KEY não configurado (pulado)' : null };
   }
-  try {
-    const query = city?.trim()
-      ? `${businessName} ${city.trim()}`
-      : businessName;
-    const params = new URLSearchParams({
-      engine: 'google',
-      q: query,
-      hl: 'pt-br',
-      gl: 'br',
-      safe: 'off',
-      api_key: SERPAPI_KEY,
-    });
-    const res = await fetch(`https://serpapi.com/search.json?${params}`, {
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) {
+
+  const query = city?.trim()
+    ? `${businessName} ${city.trim()}`
+    : businessName;
+
+  for (let attempt = 0; attempt < SERPAPI_KEYS.length; attempt++) {
+    const key = getActiveKey();
+    const idx = currentKeyIndex;
+    try {
+      const params = new URLSearchParams({
+        engine: 'google',
+        q: query,
+        hl: 'pt-br',
+        gl: 'br',
+        safe: 'off',
+        api_key: key,
+      });
+      const res = await fetch(`https://serpapi.com/search.json?${params}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        await logApiUsage('detect-ads/google', idx, 'success', res.status);
+        if (data?.error) {
+          return { count: 0, found: null, error: `Erro SerpApi: ${data.error}` };
+        }
+        const ads = Array.isArray(data?.ads) ? data.ads : [];
+        return { count: ads.length, found: ads.length > 0, error: null };
+      }
+
+      if (isRateLimited(res)) {
+        await logApiUsage('detect-ads/google', idx, 'rate_limited', res.status);
+        rotateKey();
+        continue;
+      }
+
       let msg = `HTTP ${res.status}`;
       try {
         const body = await res.json();
         msg = body?.error?.message || msg;
       } catch { /* ignore */ }
+      await logApiUsage('detect-ads/google', idx, 'error', res.status);
       return { count: 0, found: null, error: `Erro SerpApi: ${msg}` };
+    } catch (err: unknown) {
+      await logApiUsage('detect-ads/google', idx, 'error', 0, (err as Error)?.message);
+      return { count: 0, found: null, error: `Erro SerpApi: ${(err as Error)?.message || 'timeout'}` };
     }
-    const data = await res.json();
-    if (data?.error) {
-      return { count: 0, found: null, error: `Erro SerpApi: ${data.error}` };
-    }
-    const ads = Array.isArray(data?.ads) ? data.ads : [];
-    return { count: ads.length, found: ads.length > 0, error: null };
-  } catch (err: unknown) {
-    return { count: 0, found: null, error: `Erro SerpApi: ${(err as Error)?.message || 'timeout'}` };
   }
+
+  return { count: 0, found: null, error: 'Todas as chaves SerpAPI esgotadas' };
 }
 
 async function verifyOne(item: Item): Promise<Verification> {

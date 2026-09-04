@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Loader2, Users, Target, Inbox, TrendingUp } from 'lucide-react';
+import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AdminLead, DashboardView, STATUS_LABELS, LeadStatus } from '@/lib/types';
-import { fetchAdminLeads } from '@/lib/dashboard-api';
+import { AdminLead, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary } from '@/lib/types';
+import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -51,6 +51,7 @@ const VIEWS: { value: DashboardView; label: string }[] = [
   { value: 'por_status', label: 'Por Status' },
   { value: 'por_nicho', label: 'Por Nicho' },
   { value: 'por_estado', label: 'Por Estado (UF)' },
+  { value: 'api_usage', label: 'Uso das APIs' },
 ];
 
 function normalize(s: string | null | undefined): string {
@@ -61,6 +62,10 @@ export default function DashboardAdmin() {
   const [leads, setLeads] = useState<AdminLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<DashboardView>('geral');
+  const [apiStats, setApiStats] = useState<ApiUsageStats[]>([]);
+  const [apiSummary, setApiSummary] = useState<ApiUsageSummary | null>(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiDays, setApiDays] = useState(7);
 
   useEffect(() => {
     (async () => {
@@ -74,6 +79,26 @@ export default function DashboardAdmin() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (view === 'api_usage') {
+      (async () => {
+        setApiLoading(true);
+        try {
+          const [stats, summary] = await Promise.all([
+            fetchApiUsageStats(apiDays),
+            fetchApiUsageSummary(apiDays),
+          ]);
+          setApiStats(stats);
+          setApiSummary(summary);
+        } catch (e: any) {
+          toast.error(e?.message || 'Erro ao carregar estatísticas de API.');
+        } finally {
+          setApiLoading(false);
+        }
+      })();
+    }
+  }, [view, apiDays]);
 
   const stats = useMemo(() => {
     const uniqueOwners = new Set<string>();
@@ -376,6 +401,202 @@ export default function DashboardAdmin() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        )}
+
+        {view === 'api_usage' && (
+          <>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Activity className="w-4 h-4 text-gold-500" />
+                Monitoramento de uso das chaves SerpAPI
+              </div>
+              <Select value={String(apiDays)} onValueChange={(v) => setApiDays(Number(v))}>
+                <SelectTrigger className="w-36 h-10 rounded-xl border-input bg-card focus:border-gold-500 focus:ring-gold-500">
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Últimas 24h</SelectItem>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="15">Últimos 15 dias</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {apiLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+              </div>
+            ) : (
+              <>
+                {apiSummary && (
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                    <Card className="border-border bg-card shadow-sm">
+                      <CardContent className="pt-5">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Activity className="w-4 h-4" /> Chamadas Totais
+                        </div>
+                        <p className="text-3xl font-bold text-foreground mt-1">{apiSummary.total_calls}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card shadow-sm">
+                      <CardContent className="pt-5">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <TrendingUp className="w-4 h-4" /> Sucesso
+                        </div>
+                        <p className="text-3xl font-bold text-green-500 mt-1">{apiSummary.success_count}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card shadow-sm">
+                      <CardContent className="pt-5">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Key className="w-4 h-4" /> Taxa de Sucesso
+                        </div>
+                        <p className="text-3xl font-bold text-foreground mt-1">{apiSummary.success_rate}%</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card shadow-sm">
+                      <CardContent className="pt-5">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Key className="w-4 h-4" /> Chave Principal
+                        </div>
+                        <p className="text-3xl font-bold text-foreground mt-1">{apiSummary.primary_key_usage}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-border bg-card shadow-sm">
+                      <CardContent className="pt-5">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Key className="w-4 h-4" /> Chave Fallback
+                        </div>
+                        <p className="text-3xl font-bold text-amber-500 mt-1">{apiSummary.fallback_key_usage}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                <div className="grid lg:grid-cols-2 gap-4">
+                  {apiSummary && (
+                    <Card className="border-border bg-card shadow-sm">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-semibold text-foreground">
+                          Distribuição por Chave
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: 'Chave Principal', value: apiSummary.primary_key_usage },
+                                { name: 'Chave Fallback', value: apiSummary.fallback_key_usage },
+                              ]}
+                              dataKey="value"
+                              nameKey="name"
+                              outerRadius={100}
+                              label
+                            >
+                              <Cell fill="#eab308" />
+                              <Cell fill="#8b5cf6" />
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card className="border-border bg-card shadow-sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-semibold text-foreground">
+                        Chamadas por Status
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-72">
+                      {apiSummary ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={[
+                              { name: 'Sucesso', value: apiSummary.success_count },
+                              { name: 'Erro', value: apiSummary.error_count },
+                              { name: 'Rate Limited', value: apiSummary.rate_limited_count },
+                            ]}
+                            margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
+                          >
+                            <XAxis dataKey="name" stroke="#888" fontSize={11} />
+                            <YAxis allowDecimals={false} stroke="#888" fontSize={11} />
+                            <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+                            <Legend />
+                            <Bar dataKey="value" name="Chamadas" radius={[4, 4, 0, 0]}>
+                              <Cell fill="#22c55e" />
+                              <Cell fill="#ef4444" />
+                              <Cell fill="#f59e0b" />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                          Sem dados de uso de API no período.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="border-border bg-card shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-foreground">
+                      Detalhamento por Endpoint e Chave
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-accent/50">
+                          <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground">Endpoint</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Chave</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Total</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Sucesso</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Erro</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Rate Limit</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Sucesso %</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Última Chamada</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {apiStats.map((s) => (
+                          <tr key={`${s.endpoint}-${s.key_index}`} className="border-b border-border hover:bg-accent/40">
+                            <td className="px-3 py-2 font-medium text-foreground">{s.endpoint}</td>
+                            <td className="px-3 py-2 text-center">
+                              <Badge variant={s.key_index === 0 ? 'default' : 'secondary'} className="text-xs">
+                                {s.key_index === 0 ? 'Principal' : 'Fallback'}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2 text-center">{s.total_calls}</td>
+                            <td className="px-3 py-2 text-center text-green-500 font-semibold">{s.success_count}</td>
+                            <td className="px-3 py-2 text-center text-red-500">{s.error_count}</td>
+                            <td className="px-3 py-2 text-center text-amber-500">{s.rate_limited_count}</td>
+                            <td className="px-3 py-2 text-center">{s.success_rate}%</td>
+                            <td className="px-3 py-2 text-center text-muted-foreground">
+                              {s.last_used ? new Date(s.last_used).toLocaleString('pt-BR') : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                        {apiStats.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                              Nenhuma chamada registrada no período. As chamadas serão registradas automaticamente
+                              após o uso das chaves SerpAPI.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </>
         )}
       </main>
     </div>

@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const role: UserRole | null =
-    user?.user_metadata?.role === 'admin' ? 'admin' : 'sdr';
+    user?.app_metadata?.role === 'admin' ? 'admin' : 'sdr';
 
   return (
     <AuthContext.Provider value={{ user, session, loading, role, signIn, signUp, signOut }}>
