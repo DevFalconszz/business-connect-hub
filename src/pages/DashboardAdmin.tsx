@@ -22,6 +22,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { AdminLead, AdminUser, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage } from '@/lib/types';
 import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary, fetchSerpapiUsage, triggerSerpapiSync, fetchAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
@@ -83,6 +93,7 @@ export default function DashboardAdmin() {
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'sdr' });
   const [editUser, setEditUser] = useState({ name: '', role: '' });
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -195,14 +206,16 @@ export default function DashboardAdmin() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
     try {
-      await deleteAdminUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      await deleteAdminUser(userToDelete.id);
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      setUserToDelete(null);
       toast.success('Usuário excluído com sucesso.');
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao excluir usuário.');
+      setUserToDelete(null);
     }
   };
 
@@ -903,7 +916,7 @@ export default function DashboardAdmin() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteUser(u.id)}
+                                onClick={() => setUserToDelete(u)}
                                 className="text-red-500 hover:text-red-600"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1044,6 +1057,52 @@ export default function DashboardAdmin() {
           </>
         )}
       </main>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl border-border bg-card">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-red-500/10">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </span>
+            </div>
+            <AlertDialogTitle className="text-lg font-bold text-foreground">
+              Excluir usuário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Tem certeza que deseja excluir o usuário{' '}
+              <span className="font-semibold text-foreground">
+                {userToDelete?.name || userToDelete?.email || '—'}
+              </span>
+              {userToDelete?.email && !userToDelete?.name ? '' : userToDelete?.email ? (
+                <span className="text-muted-foreground"> ({userToDelete.email})</span>
+              ) : null}
+              ?
+              {userToDelete && userToDelete.lead_count > 0 && (
+                <span className="block mt-2 text-amber-600 dark:text-amber-400">
+                  Este usuário possui <span className="font-semibold">{userToDelete.lead_count} lead(s)</span> vinculado(s).
+                  Eles continuarão armazenados, mas não poderão mais ser editados por este usuário.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="rounded-xl border-input bg-background text-foreground hover:bg-accent hover:text-foreground"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="rounded-xl bg-red-600 text-white hover:bg-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Excluir usuário
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
