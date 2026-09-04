@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw } from 'lucide-react';
+import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -45,6 +45,9 @@ const STATUS_ORDER: LeadStatus[] = [
 ];
 
 const PALETTE = ['#eab308', '#3b82f6', '#22c55e', '#a855f7', '#f97316', '#ef4444', '#14b8a6', '#6366f1'];
+
+// Percentual de uso a partir do qual exibimos alerta de limite da chave SerpAPI.
+const SERPAPI_ALERT_THRESHOLD = 80;
 
 const VIEWS: { value: DashboardView; label: string }[] = [
   { value: 'geral', label: 'Geral' },
@@ -463,6 +466,48 @@ export default function DashboardAdmin() {
               </div>
             ) : (
               <>
+                {serpapiUsage.filter((a) => {
+                  const total = a.searches_per_month || 0;
+                  const pct = total > 0 ? (a.this_month_usage ?? 0) / total : 0;
+                  return pct * 100 >= SERPAPI_ALERT_THRESHOLD;
+                }).length > 0 && (
+                  <div className="grid gap-2">
+                    {serpapiUsage.map((acc) => {
+                      const total = acc.searches_per_month || 0;
+                      const used = acc.this_month_usage ?? 0;
+                      const left = acc.total_searches_left ?? 0;
+                      const pct = total > 0 ? Math.round((used / total) * 100) : 0;
+                      if (pct < SERPAPI_ALERT_THRESHOLD) return null;
+                      const critical = pct >= 95;
+                      return (
+                        <div
+                          key={`alert-${acc.key_index}`}
+                          className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${
+                            critical
+                              ? 'bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-300'
+                              : 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                          }`}
+                        >
+                          <AlertTriangle className={`w-5 h-5 mt-0.5 shrink-0 ${critical ? 'text-red-500' : 'text-amber-500'}`} />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold">
+                              {critical ? 'Crítico: ' : 'Atenção: '}
+                              {acc.key_index === 0 ? 'Chave Principal' : 'Chave Fallback'}
+                              {critical ? ' quase esgotada!' : ' perto do limite'}
+                            </p>
+                            <p className="text-sm opacity-90">
+                              Uso de {pct}% ({used}/{total}) — restam {left} buscas.{' '}
+                              {acc.plan_renewal_date
+                                ? `Renova em ${new Date(acc.plan_renewal_date + 'T00:00:00').toLocaleDateString('pt-BR')}.`
+                                : ''}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {serpapiUsage.length > 0 && (
                   <div className="grid lg:grid-cols-2 gap-4">
                     {serpapiUsage.map((acc) => {
