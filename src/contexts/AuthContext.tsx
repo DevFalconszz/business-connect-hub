@@ -57,8 +57,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const role: UserRole | null =
-    user?.app_metadata?.role === 'admin' ? 'admin' : 'sdr';
+  const [role, setRole] = useState<UserRole | null>(null);
+
+  // Resolve o role observando o usuário e, quando logado, consultando a fonte
+  // autoritativa no banco (app_metadata), com fallback para o JWT da sessão.
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setRole(null);
+      return;
+    }
+    const setFromJwt = () =>
+      setRole(user?.app_metadata?.role === 'admin' ? 'admin' : 'sdr');
+    setFromJwt();
+    (async () => {
+      try {
+        const { data, error } = await (supabase.rpc as any)('get_current_user_role');
+        if (!active) return;
+        if (!error) {
+          setRole(data === 'admin' ? 'admin' : 'sdr');
+        }
+      } catch {
+        // mantém o valor do JWT em caso de falha da consulta
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, role, signIn, signUp, signOut }}>
