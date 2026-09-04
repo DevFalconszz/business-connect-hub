@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AdminLead, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint } from './types';
+import { AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint } from './types';
 
 export async function fetchAdminLeads(): Promise<AdminLead[]> {
   const { data, error } = await (supabase.rpc as any)('admin_dashboard_leads');
@@ -64,4 +64,60 @@ export async function triggerSerpapiSync(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+// User management functions
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const { data, error } = await (supabase.rpc as any)('admin_list_users');
+  if (error) {
+    console.error('Erro ao buscar usuários:', error);
+    throw error;
+  }
+  return (data || []) as AdminUser[];
+}
+
+export async function createAdminUser(
+  email: string,
+  password: string,
+  name: string,
+  role: string = 'sdr'
+): Promise<{ id: string; email: string; name: string; role: string; password: string }> {
+  const { data, error } = await (supabase.rpc as any)('admin_create_user', {
+    p_email: email,
+    p_password: password,
+    p_name: name,
+    p_role: role,
+  });
+  if (error) {
+    console.error('Erro ao criar usuário:', error);
+    throw error;
+  }
+  return data;
+}
+
+export async function updateAdminUser(
+  userId: string,
+  updates: { name?: string; role?: string }
+): Promise<{ id: string; email: string; name: string; role: string; success: boolean }> {
+  const { data, error } = await (supabase.rpc as any)('admin_update_user', {
+    p_user_id: userId,
+    p_name: updates.name || null,
+    p_role: updates.role || null,
+  });
+  if (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    throw error;
+  }
+  return data;
+}
+
+export async function deleteAdminUser(userId: string): Promise<boolean> {
+  const { data, error } = await (supabase.rpc as any)('admin_delete_user', {
+    p_user_id: userId,
+  });
+  if (error) {
+    console.error('Erro ao excluir usuário:', error);
+    throw error;
+  }
+  return data?.success === true;
 }

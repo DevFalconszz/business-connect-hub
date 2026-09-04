@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw, AlertTriangle, UserPlus, Pencil, Trash2, Eye, EyeOff, Shield, ShieldOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -22,8 +22,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { AdminLead, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage } from '@/lib/types';
-import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary, fetchSerpapiUsage, triggerSerpapiSync } from '@/lib/dashboard-api';
+import { AdminLead, AdminUser, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage } from '@/lib/types';
+import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary, fetchSerpapiUsage, triggerSerpapiSync, fetchAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -56,6 +56,7 @@ const VIEWS: { value: DashboardView; label: string }[] = [
   { value: 'por_nicho', label: 'Por Nicho' },
   { value: 'por_estado', label: 'Por Estado (UF)' },
   { value: 'api_usage', label: 'Uso das APIs' },
+  { value: 'usuarios', label: 'Gestão de Usuários' },
 ];
 
 function normalize(s: string | null | undefined): string {
@@ -72,6 +73,16 @@ export default function DashboardAdmin() {
   const [apiDays, setApiDays] = useState(7);
   const [serpapiUsage, setSerpapiUsage] = useState<SerpapiAccountUsage[]>([]);
   const [serpapiSyncing, setSerpapiSyncing] = useState(false);
+  
+  // User management state
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'sdr' });
+  const [editUser, setEditUser] = useState({ name: '', role: '' });
+  const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
@@ -108,6 +119,22 @@ export default function DashboardAdmin() {
     }
   }, [view, apiDays]);
 
+  useEffect(() => {
+    if (view === 'usuarios') {
+      (async () => {
+        setUsersLoading(true);
+        try {
+          const data = await fetchAdminUsers();
+          setUsers(data);
+        } catch (e: any) {
+          toast.error(e?.message || 'Erro ao carregar usuários.');
+        } finally {
+          setUsersLoading(false);
+        }
+      })();
+    }
+  }, [view]);
+
   const runSerpapiSync = async () => {
     setSerpapiSyncing(true);
     try {
@@ -124,6 +151,69 @@ export default function DashboardAdmin() {
     } finally {
       setSerpapiSyncing(false);
     }
+  };
+
+  // User management functions
+  const loadUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const data = await fetchAdminUsers();
+      setUsers(data);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao carregar usuários.');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUser.email || !newUser.password) {
+      toast.error('Email e senha são obrigatórios.');
+      return;
+    }
+    try {
+      const created = await createAdminUser(newUser.email, newUser.password, newUser.name, newUser.role);
+      setUsers((prev) => [{ ...created, created_at: new Date().toISOString(), last_sign_in_at: null, deleted_at: null, lead_count: 0 }, ...prev]);
+      setShowCreateUserModal(false);
+      setNewUser({ email: '', password: '', name: '', role: 'sdr' });
+      toast.success('Usuário criado com sucesso.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao criar usuário.');
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+    try {
+      const updated = await updateAdminUser(selectedUser.id, { name: editUser.name, role: editUser.role });
+      setUsers((prev) => prev.map((u) => u.id === selectedUser.id ? { ...u, name: updated.name, role: updated.role } : u));
+      setShowEditUserModal(false);
+      setSelectedUser(null);
+      toast.success('Usuário atualizado com sucesso.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar usuário.');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+    try {
+      await deleteAdminUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast.success('Usuário excluído com sucesso.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao excluir usuário.');
+    }
+  };
+
+  const openEditModal = (user: AdminUser) => {
+    setSelectedUser(user);
+    setEditUser({ name: user.name || '', role: user.role || 'sdr' });
+    setShowEditUserModal(true);
+  };
+
+  const togglePasswordVisibility = (userId: string) => {
+    setShowPassword((prev) => ({ ...prev, [userId]: !prev[userId] }));
   };
 
   const stats = useMemo(() => {
@@ -739,6 +829,217 @@ export default function DashboardAdmin() {
                   </CardContent>
                 </Card>
               </>
+            )}
+          </>
+        )}
+
+        {view === 'usuarios' && (
+          <>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Users className="w-4 h-4 text-gold-500" />
+                Gestão de Usuários
+              </div>
+              <Button onClick={() => setShowCreateUserModal(true)}>
+                <UserPlus className="w-4 h-4 mr-1" />
+                Novo Usuário
+              </Button>
+            </div>
+
+            {usersLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+              </div>
+            ) : (
+              <Card className="border-border bg-card shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-foreground">
+                    Usuários Cadastrados ({users.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-accent/50">
+                        <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground">Nome</th>
+                        <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground">Email</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Função</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Leads</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Criado em</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Último Acesso</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id} className="border-b border-border hover:bg-accent/40">
+                          <td className="px-3 py-2 font-medium text-foreground">{u.name || '—'}</td>
+                          <td className="px-3 py-2 text-foreground">{u.email}</td>
+                          <td className="px-3 py-2 text-center">
+                            <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
+                              {u.role === 'admin' ? (
+                                <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> Admin</span>
+                              ) : (
+                                <span className="flex items-center gap-1"><ShieldOff className="w-3 h-3" /> SDR</span>
+                              )}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-2 text-center">{u.lead_count}</td>
+                          <td className="px-3 py-2 text-center text-muted-foreground text-xs">
+                            {new Date(u.created_at).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="px-3 py-2 text-center text-muted-foreground text-xs">
+                            {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString('pt-BR') : 'Nunca'}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditModal(u)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="text-red-500 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {users.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                            Nenhum usuário cadastrado.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Create User Modal */}
+            {showCreateUserModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <Card className="w-full max-w-md mx-4">
+                  <CardHeader>
+                    <CardTitle>Criar Novo Usuário</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Nome</label>
+                      <input
+                        type="text"
+                        value={newUser.name}
+                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                        className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Email *</label>
+                      <input
+                        type="email"
+                        value={newUser.email}
+                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                        className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                        placeholder="email@exemplo.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Senha *</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword['new'] ? 'text' : 'password'}
+                          value={newUser.password}
+                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                          className="w-full mt-1 px-3 py-2 pr-10 rounded-lg border border-border bg-background text-foreground"
+                          placeholder="Senha"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('new')}
+                          className="absolute right-2 top-1/2 mt-0.5 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword['new'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Função</label>
+                      <select
+                        value={newUser.role}
+                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                        className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                      >
+                        <option value="sdr">SDR</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setShowCreateUserModal(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleCreateUser}>
+                        Criar Usuário
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Edit User Modal */}
+            {showEditUserModal && selectedUser && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <Card className="w-full max-w-md mx-4">
+                  <CardHeader>
+                    <CardTitle>Editar Usuário</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Email</label>
+                      <p className="mt-1 text-foreground">{selectedUser.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Nome</label>
+                      <input
+                        type="text"
+                        value={editUser.name}
+                        onChange={(e) => setEditUser({ ...editUser, name: e.target.value })}
+                        className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Função</label>
+                      <select
+                        value={editUser.role}
+                        onChange={(e) => setEditUser({ ...editUser, role: e.target.value })}
+                        className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                      >
+                        <option value="sdr">SDR</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button variant="outline" onClick={() => setShowEditUserModal(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleEditUser}>
+                        Salvar Alterações
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </>
         )}

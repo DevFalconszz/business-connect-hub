@@ -45,7 +45,19 @@ export type DashboardView =
   | 'por_status'
   | 'por_nicho'
   | 'por_estado'
-  | 'api_usage';
+  | 'api_usage'
+  | 'usuarios';
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  deleted_at: string | null;
+  lead_count: number;
+}
 
 export interface ApiUsageStats {
   endpoint: string;
