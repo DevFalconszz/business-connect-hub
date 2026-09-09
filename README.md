@@ -28,6 +28,12 @@ _Encontre, qualifique e gerencie leads B2B com oportunidades reais de marketing 
 
 ---
 
+## Documentação
+
+- [**Rotina do SDR** (fluxograma + manual de uso)](./docs/rutina-sdr.md) — como o SDR entra na plataforma e trabalha no dia a dia.
+
+---
+
 ## 🚀 Funcionalidades
 
 ### 📋 Gestão de Leads
