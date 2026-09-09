@@ -27,6 +27,24 @@ const SERPAPI_KEYS = [
 
 const CRON_SECRET = Deno.env.get("SERPAPI_SYNC_SECRET") || "bch-sync-2026";
 
+/** Valida o JWT de um admin logado (painel "Sincronizar Agora"). */
+async function isAdminRequest(req: Request): Promise<boolean> {
+  const authHeader = req.headers.get("authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return false;
+  try {
+    const anonClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    );
+    const { data, error } = await anonClient.auth.getUser(token);
+    if (error || !data?.user) return false;
+    return (data.user.app_metadata as Record<string, unknown>)?.role === "admin";
+  } catch {
+    return false;
+  }
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -49,10 +67,11 @@ serve(async (req: Request): Promise<Response> => {
   // CORS preflight
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Autenticação adicional via header (além de/em substituição ao JWT),
-  // permitindo chamadas do pg_cron sem sessão de usuário.
+  // Autorização: aceita o x-cron-secret (pg_cron) OU o JWT de um admin logado
+  // (botão "Sincronizar Agora" no painel).
   const provided = req.headers.get("x-cron-secret");
-  if (provided !== CRON_SECRET) {
+  const isAdmin = await isAdminRequest(req);
+  if (provided !== CRON_SECRET && !isAdmin) {
     return json({ success: false, error: "Não autorizado" }, 401);
   }
 

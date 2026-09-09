@@ -26,20 +26,78 @@ const corsHeaders = {
 };
 
 const SERPAPI_KEYS = [
-  Deno.env.get("SERPAPI_KEY") || "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103",
-  Deno.env.get("SERPAPI_KEY_FALLBACK") || "360c724634183f614ce89b4de464b50d88c88eca8f2774d5ac53ac056bc0f91c",
+  (Deno.env.get("SERPAPI_KEY") || "ba2d21256ba26b49dc428d087c20aff77496c5548e40715fedf832da027ad103").trim(),
+  (Deno.env.get("SERPAPI_KEY_FALLBACK") || "360c724634183f614ce89b4de464b50d88c88eca8f2774d5ac53ac056bc0f91c").trim(),
 ];
 
 let currentKeyIndex = 0;
+let exhaustedKeys = new Set<number>();
+let lastHealthCheckMs = 0;
 
+/**
+ * Marca chaves esgotadas (créditos zerados) consultando os últimos snapshots
+ * de uso reais (tabela serpapi_usage_snapshots). Assim a chave principal
+ * esgotada é PULADA de forma proativa e a fallback é usada em seu lugar.
+ */
+async function refreshKeyHealth() {
+  const now = Date.now();
+  if (now - lastHealthCheckMs < 30_000) return;
+  lastHealthCheckMs = now;
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) return;
+
+    const checks = SERPAPI_KEYS.map(async (_k, i) => {
+      try {
+        const url =
+          `${supabaseUrl}/rest/v1/serpapi_usage_snapshots` +
+          `?key_index=eq.${i}&select=key_index,total_searches_left,fetched_at` +
+          `&order=fetched_at.desc&limit=1`;
+        const res = await fetch(url, {
+          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+        if (!row) return;
+        const fetchedAt = new Date(row.fetched_at).getTime();
+        const stale = Number.isNaN(fetchedAt) || now - fetchedAt > 24 * 3600_000;
+        const left = Number(row.total_searches_left);
+        if (!stale && !Number.isNaN(left)) {
+          if (left <= 0) exhaustedKeys.add(i);
+          else exhaustedKeys.delete(i);
+        }
+      } catch { /* não fatal */ }
+    });
+    await Promise.all(checks);
+  } catch { /* não fatal */ }
+}
+
+/** Retorna a primeira chave não esgotada (ordem: principal primeiro). */
 function getActiveKey(): string {
-  return SERPAPI_KEYS[currentKeyIndex] || SERPAPI_KEYS[0];
+  for (let i = 0; i < SERPAPI_KEYS.length; i++) {
+    if (!exhaustedKeys.has(i)) {
+      currentKeyIndex = i;
+      return SERPAPI_KEYS[i] || SERPAPI_KEYS[0];
+    }
+  }
+  currentKeyIndex = 0;
+  return SERPAPI_KEYS[0] || "";
 }
 
 function rotateKey(): string {
+  for (let step = 1; step <= SERPAPI_KEYS.length; step++) {
+    const next = (currentKeyIndex + step) % SERPAPI_KEYS.length;
+    if (!exhaustedKeys.has(next)) {
+      currentKeyIndex = next;
+      console.log(`[fallback] Rotating to SerpAPI key index ${currentKeyIndex}`);
+      return SERPAPI_KEYS[next] || SERPAPI_KEYS[0];
+    }
+  }
   currentKeyIndex = (currentKeyIndex + 1) % SERPAPI_KEYS.length;
-  console.log(`[fallback] Rotating to SerpAPI key index ${currentKeyIndex}`);
-  return getActiveKey();
+  return SERPAPI_KEYS[currentKeyIndex] || "";
 }
 
 function isRateLimited(res: Response): boolean {
@@ -209,6 +267,8 @@ async function checkGoogleAdsSerpApi(
     ? `${businessName} ${city.trim()}`
     : businessName;
 
+  await refreshKeyHealth();
+
   for (let attempt = 0; attempt < SERPAPI_KEYS.length; attempt++) {
     const key = getActiveKey();
     const idx = currentKeyIndex;
@@ -226,11 +286,18 @@ async function checkGoogleAdsSerpApi(
       });
 
       if (res.ok) {
-        const data = await res.json();
-        await logApiUsage('detect-ads/google', idx, 'success', res.status);
-        if (data?.error) {
-          return { count: 0, found: null, error: `Erro SerpApi: ${data.error}` };
+        let data: Record<string, unknown> | null = null;
+        try { data = await res.json(); } catch { /* JSON inválido */ }
+
+        // Chave esgotada: SerpApi retorna 200 com `error` no corpo. Troca de chave.
+        if (!data || data?.error) {
+          const detail = data?.error ? String(data.error) : 'JSON inválido';
+          await logApiUsage('detect-ads/google', idx, 'error', res.status, detail);
+          rotateKey();
+          continue;
         }
+
+        await logApiUsage('detect-ads/google', idx, 'success', res.status);
         const ads = Array.isArray(data?.ads) ? data.ads : [];
         return { count: ads.length, found: ads.length > 0, error: null };
       }
