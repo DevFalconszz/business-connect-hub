@@ -1,6 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Lead } from './types';
 
+export async function loadAllLeadNames(): Promise<Set<string>> {
+  const { data, error } = await (supabase.rpc as any)('get_all_lead_names');
+  if (error) {
+    console.error('Erro ao carregar nomes de leads (global):', error);
+    return new Set();
+  }
+  return new Set((data || []).map((row: any) => row.name_key));
+}
+
 function rowToLead(row: any): Lead {
   return {
     id: row.id,

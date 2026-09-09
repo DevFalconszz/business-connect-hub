@@ -10,7 +10,7 @@ import { searchLeadsLocal, isLocalServerRunning } from '@/lib/opencode-api';
 import { searchBusinesses } from '@/lib/firecrawl-api';
 import { detectAds } from '@/lib/detect-ads';
 import { enrichPhones } from '@/lib/enrich-phone';
-import { loadLeads, insertLead } from '@/lib/leads-store';
+import { loadLeads, insertLead, loadAllLeadNames } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { searchLeadsPaged } from '@/lib/search-paged';
 import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff, Megaphone, Instagram } from 'lucide-react';
@@ -94,8 +94,15 @@ export default function Prospecting() {
 
   // Busca paginada com deduplicação: filtra leads já salvos e completa até X novos.
   const searchWithDedup = async (niche: string, city: string, targetCount: number = 20): Promise<StructuredResult[]> => {
-    const savedLeads = await loadLeads();
-    const savedNames = new Set(savedLeads.map((l) => l.name.trim().toLowerCase()));
+    const savedNames = new Set<string>();
+    try {
+      const global = await loadAllLeadNames();
+      global.forEach((n) => savedNames.add(n));
+    } catch (e) {
+      console.warn('Falha ao carregar leads globais para dedup, usando apenas locais:', e);
+      const savedLeads = await loadLeads();
+      savedLeads.forEach((l) => savedNames.add(l.name.trim().toLowerCase()));
+    }
     const newResults: StructuredResult[] = [];
     let page = 1;
     const numPerPage = 20;
