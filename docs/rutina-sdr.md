@@ -64,14 +64,14 @@ flowchart TD
         P4 -- Sim --> P5[Lista só oportunidades reais:<br/>SEM site OU SEM anúncios ativos]:::step
         P5 --> P6{Análise da linha}
         P6 -->|Tem telefone/site| P7[Confere dados e adiciona]
-        P6 -->|Anúncios Meta "Por verificar"| M1
+        P6 -->|Anúncios Meta: por verificar| M1
         P7 --> P8[Botão + Adicionar aos leads<br/>status inicial: Análise Pendente]:::action
         P8 --> P9[Responsável atribuído automaticamente<br/>lead passa a ser do SDR]:::done
         P9 --> FIM
     end
 
     subgraph MANUAL[Verificação manual de anúncios Meta]
-        M1[Botão "Ver na Ad Library"<br/>abre a Meta Ad Library em nova aba]:::step
+        M1[Botão Ver na Ad Library<br/>abre a Meta Ad Library em nova aba]:::step
         M1 --> M2[Termo de busca já preenchido:<br/>Instagram sem @ ou nome do negócio]:::step
         M2 --> M3{Encontrou anúncios ativos?}
         M3 -- Sim --> M4[Marcar: Tem anúncio]:::done
@@ -82,7 +82,7 @@ flowchart TD
 
     subgraph TRABALHAR[Trabalhar leads existentes]
         T1[Buscar/navegar em Gestão de Leads<br/>por nome, cidade, decisor, responsável]:::step
-        T1 --> T2[Abrir o lead (pop-up detalhes)]
+        T1 --> T2[Abrir o lead: pop-up de detalhes]
         T2 --> T3[Atividades do lead]
         T3 --> T3A[Editar descrição]
         T3 --> T3B[Registrar Relatórios e Anotações]
@@ -91,11 +91,11 @@ flowchart TD
         T3D --> FIM
     end
 
-    FIM([Fim do expediente (17:00)<br/>preencher Relatório Diário]):::end
-    FIM --> DIARIO
+    FIM([Fim do expediente às 17:00<br/>preencher Relatório Diário]):::fim
+    FIM --> D1
 
     subgraph DIARIO[Relatório diário — até 17:00]
-        D1[Durante o expediente aparece lembrete<br/>"Não esqueça o relatório de hoje"]:::step
+        D1[Durante o expediente aparece lembrete<br/>Não esqueça o relatório de hoje]:::step
         D1 --> D2[Preencher: prospecções realizadas,<br/>ligações, reuniões, dificuldades,<br/>próximos passos]:::step
         D2 --> D3[Enviar Relatório]:::action
     end
@@ -107,7 +107,7 @@ flowchart TD
     classDef block fill:#7f1d1d,stroke:#f87171,color:#fee2e2
     classDef done fill:#14532d,stroke:#4ade80,color:#dcfce7
     classDef muted fill:#334155,stroke:#64748b,color:#cbd5e1
-    classDef end fill:#1e293b,stroke:#f5b301,color:#ffffff,stroke-width:2px
+    classDef fim fill:#1e293b,stroke:#f5b301,color:#ffffff,stroke-width:2px
 ```
 
 ---
