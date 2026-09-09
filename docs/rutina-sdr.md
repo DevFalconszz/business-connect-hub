@@ -7,6 +7,8 @@ e realiza o seu trabalho no dia a dia. Serve como:
 - Base para **novas funcionalidades** (verificações manuais de anúncios, etc.).
 - Fonte da verdade sobre o comportamento atual do sistema.
 
+![Fluxograma da rotina do SDR](./sdr-fluxograma.png)
+
 > O fluxo abaixo foi validado no código atual da plataforma
 > (rotas, telas `Gestão de Leads`, `Prospectar`, `Dashboard` e o controle de
 > relatórios diários).
