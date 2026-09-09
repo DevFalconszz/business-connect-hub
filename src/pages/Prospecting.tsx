@@ -13,7 +13,7 @@ import { enrichPhones } from '@/lib/enrich-phone';
 import { loadLeads, insertLead, loadAllLeadNames } from '@/lib/leads-store';
 import { Lead } from '@/lib/types';
 import { searchLeadsPaged } from '@/lib/search-paged';
-import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff, Megaphone, Instagram } from 'lucide-react';
+import { Search, Plus, Loader2, Globe, ExternalLink, AlertTriangle, CheckCircle, Zap, Wifi, WifiOff, Megaphone, Instagram, User } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
 import { inferUf } from '@/lib/uf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +35,6 @@ export default function Prospecting() {
   const [results, setResults] = useState<StructuredResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
-  const [responsavel, setResponsavel] = useState(user?.user_metadata?.full_name || user?.email || '');
   const [localMode, setLocalMode] = useState(false);
 
   useEffect(() => {
@@ -166,15 +165,11 @@ export default function Prospecting() {
   };
 
   const handleAddLead = async (result: StructuredResult) => {
-    if (!responsavel.trim()) {
-      toast.error('Informe o nome do responsável.');
-      return;
-    }
-
     const toStr = (v: any) => v != null ? String(v) : '';
 
     const leadCity = toStr(result.city) || city;
     const leadState = toStr(result.state) || inferUf(leadCity) || inferUf(city);
+    const responsavel = user?.user_metadata?.full_name || user?.email || '';
 
     const lead: Omit<Lead, 'id'> = {
       name: toStr(result.name) || 'Sem nome', title: toStr(result.title),
@@ -273,7 +268,7 @@ export default function Prospecting() {
                     {results.map((result, i) => (
                       <TableRow key={i} className="hover:bg-accent/40 border-border">
                         <TableCell>
-                          <Button size="sm" className="h-8 w-8 p-0 rounded-lg bg-gold-500 text-black hover:bg-gold-600" onClick={() => { setAddingIndex(i); setResponsavel(''); }} title="Adicionar aos leads">
+                          <Button size="sm" className="h-8 w-8 p-0 rounded-lg bg-gold-500 text-black hover:bg-gold-600" onClick={() => setAddingIndex(i)} title="Adicionar aos leads">
                             <Plus className="w-4 h-4" />
                           </Button>
                         </TableCell>
@@ -401,9 +396,10 @@ export default function Prospecting() {
                   </Button>
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Responsável *</label>
-                <Input className="h-12 text-sm rounded-xl mt-1.5 bg-background border-input focus:border-gold-500 focus:ring-gold-500" placeholder="Nome do responsável por este lead" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} autoFocus />
+              <div className="bg-accent rounded-xl px-3 py-2.5 text-sm text-foreground flex items-center gap-2">
+                <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Responsável automático:</span>
+                <span className="font-medium truncate">{user?.user_metadata?.full_name || user?.email || ''}</span>
               </div>
               <Button className="w-full h-12 rounded-xl text-sm font-semibold bg-gold-500 text-black hover:bg-gold-600" onClick={() => handleAddLead(results[addingIndex])}>
                 <Plus className="w-4 h-4 mr-2" />Adicionar Lead

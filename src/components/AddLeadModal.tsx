@@ -19,7 +19,6 @@ const fields = [
   { key: 'phone', label: 'Telefone' },
   { key: 'nome_decisor', label: 'Nome Decisor' },
   { key: 'numero_decisor', label: 'N\u00famero Decisor' },
-  { key: 'responsavel', label: 'Pessoa Respons\u00e1vel' },
   { key: 'website', label: 'Website', full: true },
   { key: 'address', label: 'Endere\u00e7o', full: true },
   { key: 'descricao', label: 'Descri\u00e7\u00e3o', full: true },

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint } from './types';
+import { AdminDailyReport, AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint } from './types';
 
 export async function fetchAdminLeads(): Promise<AdminLead[]> {
   const { data, error } = await (supabase.rpc as any)('admin_dashboard_leads');
@@ -120,4 +120,13 @@ export async function deleteAdminUser(userId: string): Promise<boolean> {
     throw error;
   }
   return data?.success === true;
+}
+
+export async function fetchAdminDailyReports(): Promise<AdminDailyReport[]> {
+  const { data, error } = await (supabase.rpc as any)('admin_list_daily_reports');
+  if (error) {
+    console.error('Erro ao buscar relatórios diários:', error);
+    throw error;
+  }
+  return (data || []) as AdminDailyReport[];
 }

@@ -1,13 +1,16 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Lead } from '@/lib/types';
+import { Lead, LeadReport } from '@/lib/types';
 import { StatusBadge } from './StatusBadge';
-import { MapPin, Phone, Globe, MessageCircle, Instagram, ExternalLink, User, PhoneCall } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, Instagram, ExternalLink, User, PhoneCall, FileText, Plus, Trash2, Pencil } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { loadLeadReports, addLeadReport, updateLeadReport, deleteLeadReport } from '@/lib/leads-store';
+import { toast } from 'sonner';
 
 interface Props {
   lead: Lead | null;
@@ -19,19 +22,38 @@ interface Props {
 export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
   const [whatsapp, setWhatsapp] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [descricao, setDescricao] = useState('');
+  const [reports, setReports] = useState<LeadReport[]>([]);
+  const [newReport, setNewReport] = useState('');
+  const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [editingReport, setEditingReport] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
-  const handleOpen = (isOpen: boolean) => {
-    if (isOpen && lead) {
+  useEffect(() => {
+    if (open && lead) {
       setWhatsapp(lead.whatsapp_group);
       setSelectedDates(lead.meeting_dates.map(d => new Date(d)));
+      setDescricao(lead.descricao || '');
+      setNewReport('');
+      setExpandedReport(null);
+      setEditingReport(null);
+      loadLeadReports(lead.id).then(setReports);
     }
+  }, [open, lead]);
+
+  const handleOpen = (isOpen: boolean) => {
     if (!isOpen) onClose();
   };
 
   if (!lead) return null;
 
   const handleSave = () => {
-    onUpdate({ ...lead, whatsapp_group: whatsapp, meeting_dates: selectedDates.map(d => d.toISOString()) });
+    onUpdate({
+      ...lead,
+      whatsapp_group: whatsapp,
+      meeting_dates: selectedDates.map(d => d.toISOString()),
+      descricao,
+    });
     onClose();
   };
 
@@ -48,6 +70,40 @@ export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
     const start = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const end = new Date(date.getTime() + 3600000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Reunião - ${encodeURIComponent(lead.name)}&dates=${start}/${end}`;
+  };
+
+  const handleAddReport = async () => {
+    if (!newReport.trim()) return;
+    const created = await addLeadReport(lead.id, newReport.trim());
+    if (created) {
+      setReports(prev => [created, ...prev]);
+      setNewReport('');
+      toast.success('Relatório adicionado.');
+    } else {
+      toast.error('Erro ao adicionar relatório.');
+    }
+  };
+
+  const handleUpdateReport = async (id: string, content: string) => {
+    if (!content.trim()) return;
+    const ok = await updateLeadReport(id, content.trim());
+    if (ok) {
+      setReports(prev => prev.map(r => r.id === id ? { ...r, content: content.trim(), updated_at: new Date().toISOString() } : r));
+      setEditingReport(null);
+      toast.success('Relatório atualizado.');
+    } else {
+      toast.error('Erro ao atualizar relatório.');
+    }
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    const ok = await deleteLeadReport(id);
+    if (ok) {
+      setReports(prev => prev.filter(r => r.id !== id));
+      toast.success('Relatório removido.');
+    } else {
+      toast.error('Erro ao remover relatório.');
+    }
   };
 
   return (
@@ -98,13 +154,21 @@ export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
               </div>
             </section>
 
-            {(lead.responsavel || lead.descricao) && (
-              <section>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Gestão</h3>
-                {lead.responsavel && <p className="text-sm text-foreground"><span className="text-muted-foreground">Responsável:</span> {lead.responsavel}</p>}
-                {lead.descricao && <p className="text-sm mt-1 text-foreground"><span className="text-muted-foreground">Descrição:</span> {lead.descricao}</p>}
-              </section>
-            )}
+            <section>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Gestão</h3>
+              <div className="space-y-2 text-sm text-foreground">
+                <p><span className="text-muted-foreground">Responsável:</span> {lead.responsavel || '—'}</p>
+                <div>
+                  <span className="text-muted-foreground">Descrição:</span>
+                  <Textarea
+                    value={descricao}
+                    onChange={(e) => setDescricao(e.target.value)}
+                    className="mt-1 bg-background border-input focus:border-gold-500 focus:ring-gold-500 min-h-[80px] text-sm"
+                    placeholder="Descreva informações relevantes sobre este lead..."
+                  />
+                </div>
+              </div>
+            </section>
           </div>
 
           <div className="space-y-4">
@@ -133,6 +197,67 @@ export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
             <Button onClick={handleSave} className="w-full bg-gold-500 text-black hover:bg-gold-600">Salvar Alterações</Button>
           </div>
         </div>
+
+        <section className="mt-6 border-t border-border pt-4">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5" /> Relatórios e Anotações
+          </h3>
+
+          <div className="space-y-2">
+            {reports.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum relatório/anotação registrado para este lead.</p>
+            )}
+            {reports.map(r => (
+              <div key={r.id} className="border border-border rounded-xl bg-accent/40 p-3 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleString('pt-BR')}</span>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setEditingReport(r.id); setEditingContent(r.content); }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" onClick={() => handleDeleteReport(r.id)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                {editingReport === r.id ? (
+                  <div className="mt-2 space-y-2">
+                    <Textarea value={editingContent} onChange={(e) => setEditingContent(e.target.value)} className="min-h-[60px] text-sm bg-background border-input" />
+                    <div className="flex gap-2">
+                      <Button size="sm" className="bg-gold-500 text-black hover:bg-gold-600" onClick={() => handleUpdateReport(r.id, editingContent)}>
+                        Salvar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingReport(null)}>Cancelar</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className={"mt-1 text-foreground whitespace-pre-wrap cursor-pointer" + (expandedReport === r.id ? '' : ' line-clamp-2')} onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}>
+                      {r.content}
+                    </p>
+                    {r.content.length > 120 && (
+                      <button className="text-gold-500 text-xs hover:underline mt-1" onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}>
+                        {expandedReport === r.id ? 'Ver menos' : 'Ver mais'}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 space-y-2">
+            <Textarea
+              value={newReport}
+              onChange={(e) => setNewReport(e.target.value)}
+              placeholder="Escreva um novo relatório/anotação sobre este lead (ligações feitas, retornos, próximos passos...)"
+              className="min-h-[70px] text-sm bg-background border-input focus:border-gold-500"
+            />
+            <Button className="bg-gold-500 text-black hover:bg-gold-600" onClick={handleAddReport} disabled={!newReport.trim()}>
+              <Plus className="w-4 h-4 mr-1.5" /> Adicionar Relatório
+            </Button>
+          </div>
+        </section>
       </DialogContent>
     </Dialog>
   );

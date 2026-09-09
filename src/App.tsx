@@ -12,6 +12,7 @@ import Prospecting from "./pages/Prospecting.tsx";
 import DashboardAdmin from "./pages/DashboardAdmin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AppHeader } from "./components/AppHeader.tsx";
+import { DailyReportGate } from "./components/DailyReportGate.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,8 +31,8 @@ const App = () => (
                 <ProtectedRoute>
                   <AppHeader />
                   <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/prospectar" element={<Prospecting />} />
+                    <Route path="/" element={<DailyReportGate><Index /></DailyReportGate>} />
+                    <Route path="/prospectar" element={<DailyReportGate><Prospecting /></DailyReportGate>} />
                     <Route
                       path="/dashboard"
                       element={

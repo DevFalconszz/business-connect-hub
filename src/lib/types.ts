@@ -46,7 +46,8 @@ export type DashboardView =
   | 'por_nicho'
   | 'por_estado'
   | 'api_usage'
-  | 'usuarios';
+  | 'usuarios'
+  | 'relatorios';
 
 export interface AdminUser {
   id: string;
@@ -57,6 +58,29 @@ export interface AdminUser {
   last_sign_in_at: string | null;
   deleted_at: string | null;
   lead_count: number;
+}
+
+export interface DailyReport {
+  id: string;
+  user_id: string;
+  report_date: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminDailyReport extends DailyReport {
+  email: string;
+  user_name: string;
+}
+
+export interface LeadReport {
+  id: string;
+  lead_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApiUsageStats {

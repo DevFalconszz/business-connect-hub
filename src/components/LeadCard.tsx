@@ -2,14 +2,13 @@ import { Lead } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, MapPin, Phone, Pencil, Check, X, Trash2 } from 'lucide-react';
+import { Eye, MapPin, Phone, Pencil, Check, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
   lead: Lead;
   onOpenLead: (lead: Lead) => void;
   onUpdateLead: (lead: Lead) => void;
-  onDeleteLead: (id: string) => void;
 }
 
 const statusCardBorder: Record<string, string> = {
@@ -21,7 +20,7 @@ const statusCardBorder: Record<string, string> = {
   venda_fechada: 'border-l-4 border-l-emerald-500',
 };
 
-export function LeadCard({ lead, onOpenLead, onUpdateLead, onDeleteLead }: Props) {
+export function LeadCard({ lead, onOpenLead, onUpdateLead }: Props) {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState(lead);
 
@@ -45,7 +44,7 @@ export function LeadCard({ lead, onOpenLead, onUpdateLead, onDeleteLead }: Props
           {([
             ['name', 'Nome'], ['category', 'Nicho'], ['city', 'Cidade'], ['state', 'UF'],
             ['phone', 'Telefone'], ['nome_decisor', 'Nome Decisor'], ['numero_decisor', 'N\u00famero Decisor'],
-            ['responsavel', 'Respons\u00e1vel'], ['descricao', 'Descri\u00e7\u00e3o'], ['website', 'Website'],
+            ['descricao', 'Descri\u00e7\u00e3o'], ['website', 'Website'],
           ] as [keyof Lead, string][]).map(([key, label]) => (
             <div key={key} className={key === 'descricao' || key === 'website' ? 'sm:col-span-2' : ''}>
               <label className="text-[11px] font-medium text-muted-foreground">{label}</label>
@@ -82,7 +81,6 @@ export function LeadCard({ lead, onOpenLead, onUpdateLead, onDeleteLead }: Props
       <div className="mt-3 flex gap-2">
         <Button variant="outline" size="sm" className="flex-1 h-10 text-sm border-input hover:border-gold-500" onClick={startEdit}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
         <Button size="sm" className="flex-1 h-10 text-sm bg-gold-500 text-black hover:bg-gold-600" onClick={() => onOpenLead(lead)}><Eye className="w-4 h-4 mr-1.5" /> Detalhes</Button>
-        <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-red-500 hover:text-red-400 hover:bg-accent" onClick={() => onDeleteLead(lead.id)}><Trash2 className="w-4 h-4" /></Button>
       </div>
     </div>
   );

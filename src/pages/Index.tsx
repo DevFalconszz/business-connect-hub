@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead } from '@/lib/types';
-import { loadLeads, insertLead, updateLead, deleteLead } from '@/lib/leads-store';
+import { loadLeads, insertLead, updateLead } from '@/lib/leads-store';
 import { LeadsTable } from '@/components/LeadsTable';
 import { LeadCard } from '@/components/LeadCard';
 import { LeadModal } from '@/components/LeadModal';
@@ -32,16 +32,6 @@ const Index = () => {
   const handleUpdateLead = useCallback(async (updated: Lead) => {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
     await updateLead(updated);
-  }, []);
-
-  const handleDeleteLead = useCallback(async (id: string) => {
-    const ok = await deleteLead(id);
-    if (ok) {
-      setLeads(prev => prev.filter(l => l.id !== id));
-      toast.success('Lead excluído!');
-    } else {
-      toast.error('Erro ao excluir lead.');
-    }
   }, []);
 
   const handleAddLead = async (lead: Lead) => {
@@ -90,11 +80,11 @@ const Index = () => {
         {loading ? (
           <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-gold-500" /></div>
         ) : viewMode === 'table' ? (
-          <LeadsTable leads={filtered} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} onDeleteLead={handleDeleteLead} />
+          <LeadsTable leads={filtered} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map(lead => (
-              <LeadCard key={lead.id} lead={lead} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} onDeleteLead={handleDeleteLead} />
+              <LeadCard key={lead.id} lead={lead} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
             ))}
             {filtered.length === 0 && (
               <div className="col-span-full text-center py-16 text-muted-foreground">

@@ -1,14 +1,13 @@
 import { Lead } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash2 } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface Props {
   leads: Lead[];
   onOpenLead: (lead: Lead) => void;
   onUpdateLead: (lead: Lead) => void;
-  onDeleteLead: (id: string) => void;
 }
 
 const statusRowBg: Record<string, string> = {
@@ -30,7 +29,7 @@ function EditableCell({ value, onChange, className = '' }: { value: string; onCh
   );
 }
 
-export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Props) {
+export function LeadsTable({ leads, onOpenLead, onUpdateLead }: Props) {
   return (
     <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
@@ -72,16 +71,13 @@ export function LeadsTable({ leads, onOpenLead, onUpdateLead, onDeleteLead }: Pr
                 <td className="px-3 py-1.5">
                   <EditableCell value={lead.numero_decisor} onChange={(v) => onUpdateLead({ ...lead, numero_decisor: v })} className="w-[130px] font-mono-num" />
                 </td>
-                <td className="px-3 py-1.5">
-                  <EditableCell value={lead.responsavel} onChange={(v) => onUpdateLead({ ...lead, responsavel: v })} className="w-[120px]" />
+                <td className="px-3 py-1.5 whitspace-nowrap">
+                  <span className="text-xs text-foreground">{lead.responsavel || '—'}</span>
                 </td>
                 <td className="sticky right-0 z-10 bg-card px-3 py-1.5 text-center">
                   <div className="flex items-center gap-1 justify-center">
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-accent" onClick={() => onOpenLead(lead)}>
                       <Eye className="w-4 h-4 text-muted-foreground" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-400 hover:bg-accent" onClick={() => onDeleteLead(lead.id)}>
-                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </td>

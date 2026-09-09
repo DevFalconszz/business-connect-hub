@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw, AlertTriangle, UserPlus, Pencil, Trash2, Eye, EyeOff, Shield, ShieldOff } from 'lucide-react';
+import { Loader2, Users, Target, Inbox, TrendingUp, Activity, Key, RefreshCw, AlertTriangle, UserPlus, Pencil, Trash2, Eye, EyeOff, Shield, ShieldOff, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -32,8 +32,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AdminLead, AdminUser, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage } from '@/lib/types';
-import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary, fetchSerpapiUsage, triggerSerpapiSync, fetchAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser } from '@/lib/dashboard-api';
+import { AdminLead, AdminDailyReport, AdminUser, DashboardView, STATUS_LABELS, LeadStatus, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage } from '@/lib/types';
+import { fetchAdminLeads, fetchApiUsageStats, fetchApiUsageSummary, fetchSerpapiUsage, triggerSerpapiSync, fetchAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, fetchAdminDailyReports } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -67,6 +67,7 @@ const VIEWS: { value: DashboardView; label: string }[] = [
   { value: 'por_estado', label: 'Por Estado (UF)' },
   { value: 'api_usage', label: 'Uso das APIs' },
   { value: 'usuarios', label: 'Gestão de Usuários' },
+  { value: 'relatorios', label: 'Relatórios Diários' },
 ];
 
 function normalize(s: string | null | undefined): string {
@@ -94,6 +95,11 @@ export default function DashboardAdmin() {
   const [editUser, setEditUser] = useState({ name: '', role: '' });
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
   const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+
+  // Reports state
+  const [dailyReports, setDailyReports] = useState<AdminDailyReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -141,6 +147,22 @@ export default function DashboardAdmin() {
           toast.error(e?.message || 'Erro ao carregar usuários.');
         } finally {
           setUsersLoading(false);
+        }
+      })();
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (view === 'relatorios') {
+      (async () => {
+        setReportsLoading(true);
+        try {
+          const data = await fetchAdminDailyReports();
+          setDailyReports(data);
+        } catch (e: any) {
+          toast.error(e?.message || 'Erro ao carregar relatórios diários.');
+        } finally {
+          setReportsLoading(false);
         }
       })();
     }
@@ -1053,6 +1075,63 @@ export default function DashboardAdmin() {
                   </CardContent>
                 </Card>
               </div>
+            )}
+          </>
+        )}
+
+        {view === 'relatorios' && (
+          <>
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <FileText className="w-4 h-4 text-gold-500" />
+              Relatórios Diários dos SDRs
+            </div>
+
+            {reportsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+              </div>
+            ) : (
+              <Card className="border-border bg-card shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-foreground">
+                    Relatórios ({dailyReports.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  {dailyReports.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      Nenhum relatório diário registrado ainda.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {dailyReports.map((r) => (
+                        <div key={r.id} className="border border-border rounded-xl p-3 bg-accent/40">
+                          <button
+                            type="button"
+                            className="w-full flex items-center justify-between gap-3 text-left"
+                            onClick={() => setExpandedReportId(expandedReportId === r.id ? null : r.id)}
+                          >
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="font-semibold text-foreground text-sm">{r.user_name || r.email}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {new Date(r.report_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              </Badge>
+                            </div>
+                            <span className="text-muted-foreground text-xs">
+                              {expandedReportId === r.id ? 'Ocultar' : 'Ver'}
+                            </span>
+                          </button>
+                          {expandedReportId === r.id && (
+                            <p className="mt-3 text-sm text-foreground whitespace-pre-wrap border-t border-border pt-3">
+                              {r.content}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
           </>
         )}

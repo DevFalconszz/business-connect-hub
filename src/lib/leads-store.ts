@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Lead } from './types';
+import { DailyReport, Lead, LeadReport } from './types';
 
 export async function loadAllLeadNames(): Promise<Set<string>> {
   const { data, error } = await (supabase.rpc as any)('get_all_lead_names');
@@ -87,5 +87,89 @@ export async function updateLead(lead: Lead): Promise<boolean> {
 export async function deleteLead(id: string): Promise<boolean> {
   const { error } = await supabase.from('leads').delete().eq('id', id);
   if (error) { console.error('Error deleting lead:', error); return false; }
+  return true;
+}
+
+// ============================================================
+// Relatórios diários (SDR)
+// ============================================================
+export async function loadMyDailyReports(): Promise<DailyReport[]> {
+  const { data, error } = await supabase
+    .from('daily_reports')
+    .select('*')
+    .order('report_date', { ascending: false });
+  if (error) {
+    console.error('Error loading daily reports:', error);
+    return [];
+  }
+  return (data || []) as DailyReport[];
+}
+
+export async function upsertDailyReport(reportDate: string, content: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from('daily_reports').upsert(
+    {
+      user_id: user?.id,
+      report_date: reportDate,
+      content,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,report_date' },
+  );
+  if (error) {
+    console.error('Error saving daily report:', error);
+    return false;
+  }
+  return true;
+}
+
+// ============================================================
+// Relatórios/anotações por lead
+// ============================================================
+export async function loadLeadReports(leadId: string): Promise<LeadReport[]> {
+  const { data, error } = await supabase
+    .from('lead_reports')
+    .select('*')
+    .eq('lead_id', leadId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error loading lead reports:', error);
+    return [];
+  }
+  return (data || []) as LeadReport[];
+}
+
+export async function addLeadReport(leadId: string, content: string): Promise<LeadReport | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from('lead_reports')
+    .insert({ lead_id: leadId, user_id: user?.id, content })
+    .select()
+    .single();
+  if (error) {
+    console.error('Error adding lead report:', error);
+    return null;
+  }
+  return data as LeadReport;
+}
+
+export async function updateLeadReport(reportId: string, content: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('lead_reports')
+    .update({ content, updated_at: new Date().toISOString() })
+    .eq('id', reportId);
+  if (error) {
+    console.error('Error updating lead report:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function deleteLeadReport(reportId: string): Promise<boolean> {
+  const { error } = await supabase.from('lead_reports').delete().eq('id', reportId);
+  if (error) {
+    console.error('Error deleting lead report:', error);
+    return false;
+  }
   return true;
 }
