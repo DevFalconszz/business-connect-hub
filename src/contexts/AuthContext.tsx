@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'admin' | 'sdr';
+export type UserRole = 'admin' | 'sdr' | 'tm';
 
 interface AuthContextType {
   user: User | null;
@@ -67,15 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRole(null);
       return;
     }
+    const resolveRole = (raw: unknown): UserRole =>
+      raw === 'admin' ? 'admin' : raw === 'tm' ? 'tm' : 'sdr';
     const setFromJwt = () =>
-      setRole(user?.app_metadata?.role === 'admin' ? 'admin' : 'sdr');
+      setRole(resolveRole(user?.app_metadata?.role));
     setFromJwt();
     (async () => {
       try {
         const { data, error } = await (supabase.rpc as any)('get_current_user_role');
         if (!active) return;
         if (!error) {
-          setRole(data === 'admin' ? 'admin' : 'sdr');
+          setRole(resolveRole(data));
         }
       } catch {
         // mantém o valor do JWT em caso de falha da consulta

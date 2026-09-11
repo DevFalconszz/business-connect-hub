@@ -916,6 +916,8 @@ export default function DashboardAdmin() {
                             <Badge variant={u.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                               {u.role === 'admin' ? (
                                 <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> Admin</span>
+                              ) : u.role === 'tm' ? (
+                                <span className="flex items-center gap-1"><Users className="w-3 h-3" /> TM</span>
                               ) : (
                                 <span className="flex items-center gap-1"><ShieldOff className="w-3 h-3" /> SDR</span>
                               )}
@@ -1025,6 +1027,7 @@ export default function DashboardAdmin() {
                         className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                       >
                         <option value="sdr">SDR</option>
+                        <option value="tm">TM</option>
                         <option value="admin">Admin</option>
                       </select>
                     </div>
@@ -1071,6 +1074,7 @@ export default function DashboardAdmin() {
                         className="w-full mt-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                       >
                         <option value="sdr">SDR</option>
+                        <option value="tm">TM</option>
                         <option value="admin">Admin</option>
                       </select>
                     </div>
