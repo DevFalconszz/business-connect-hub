@@ -1,5 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AdminDailyReport, AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint } from './types';
+import { AdminDailyReport, AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint, TmDashboard } from './types';
+
+export async function fetchTmDashboard(): Promise<TmDashboard | null> {
+  const { data, error } = await (supabase.rpc as any)('tm_dashboard');
+  if (error) {
+    console.error('Erro ao buscar painel do gestor:', error);
+    throw error;
+  }
+  return (data as TmDashboard) || null;
+}
 
 export async function fetchAdminLeads(): Promise<AdminLead[]> {
   const { data, error } = await (supabase.rpc as any)('admin_dashboard_leads');

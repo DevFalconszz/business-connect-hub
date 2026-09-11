@@ -1,20 +1,37 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./contexts/AuthContext";
+import { useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import Auth from "./pages/Auth.tsx";
 import Index from "./pages/Index.tsx";
 import Prospecting from "./pages/Prospecting.tsx";
 import DashboardAdmin from "./pages/DashboardAdmin.tsx";
+import DashboardTM from "./pages/DashboardTM.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AppHeader } from "./components/AppHeader.tsx";
 import { DailyReportGate } from "./components/DailyReportGate.tsx";
 
 const queryClient = new QueryClient();
+
+/** Redireciona TM que tentar acessar áreas de SDR (Gestão de Leads / Prospectar). */
+function RedirectTM({ children }: { children: React.ReactNode }) {
+  const { role } = useAuth();
+  if (role === 'tm') return <Navigate to="/tm" replace />;
+  return <>{children}</>;
+}
+
+/** Protege a rota /tm: somente o cargo TM (e admin via /dashboard) acessam. */
+function TMRoute({ children }: { children: React.ReactNode }) {
+  const { role } = useAuth();
+  if (role === 'admin') return <Navigate to="/dashboard" replace />;
+  if (role !== 'tm') return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -31,8 +48,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppHeader />
                   <Routes>
-                    <Route path="/" element={<DailyReportGate><Index /></DailyReportGate>} />
-                    <Route path="/prospectar" element={<DailyReportGate><Prospecting /></DailyReportGate>} />
+                    <Route path="/" element={<RedirectTM><DailyReportGate><Index /></DailyReportGate></RedirectTM>} />
+                    <Route path="/prospectar" element={<RedirectTM><DailyReportGate><Prospecting /></DailyReportGate></RedirectTM>} />
+                    <Route
+                      path="/tm"
+                      element={
+                        <TMRoute>
+                          <DashboardTM />
+                        </TMRoute>
+                      }
+                    />
                     <Route
                       path="/dashboard"
                       element={

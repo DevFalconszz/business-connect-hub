@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ClipboardList, Radar, BarChart3, LogOut } from 'lucide-react';
+import { ClipboardList, Radar, BarChart3, Gauge, LogOut } from 'lucide-react';
 import { isLocal } from '@/lib/env-check';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,20 +8,21 @@ interface Tab {
   to: string;
   label: string;
   icon: typeof ClipboardList;
-  adminOnly?: boolean;
+  role?: 'admin' | 'tm';
 }
 
 const tabs: Tab[] = [
   { to: '/', label: 'Gestão de Leads', icon: ClipboardList },
   { to: '/prospectar', label: 'Prospectar', icon: Radar },
-  { to: '/dashboard', label: 'Dashboard', icon: BarChart3, adminOnly: true },
+  { to: '/dashboard', label: 'Dashboard', icon: BarChart3, role: 'admin' },
+  { to: '/tm', label: 'Gestor de Tráfego', icon: Gauge, role: 'tm' },
 ];
 
 export function AppHeader() {
   const location = useLocation();
   const { signOut, user, role } = useAuth();
 
-  const visibleTabs = tabs.filter((tab) => !tab.adminOnly || role === 'admin');
+  const visibleTabs = tabs.filter((tab) => !tab.role || tab.role === role);
 
   return (
     <header className="border-b border-border bg-card text-foreground sticky top-0 z-30">

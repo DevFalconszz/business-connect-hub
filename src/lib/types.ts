@@ -125,3 +125,27 @@ export interface SerpapiUsagePoint {
   this_month_usage: number;
   total_searches_left: number;
 }
+
+export interface TmRecentLead {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  status: string;
+  responsavel: string;
+  created_at: string;
+}
+
+export interface TmByOwner {
+  responsavel: string;
+  total: number;
+  vendas: number;
+}
+
+export interface TmDashboard {
+  total: number;
+  total_hoje: number;
+  funil: Partial<Record<LeadStatus, number>>;
+  por_responsavel: TmByOwner[];
+  recentes: TmRecentLead[];
+}

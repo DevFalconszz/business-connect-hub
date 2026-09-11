@@ -16,7 +16,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const homePath = role === 'admin' ? '/dashboard' : '/';
+  const homePath = role === 'admin' ? '/dashboard' : role === 'tm' ? '/tm' : '/';
 
   useEffect(() => {
     if (!loading && user) {

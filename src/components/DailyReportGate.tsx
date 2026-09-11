@@ -28,7 +28,7 @@ export function DailyReportGate({ children }: { children: ReactNode }) {
     return map;
   }, [reports]);
 
-  const isAdmin = role === 'admin';
+  const isPrivileged = role === 'admin' || role === 'tm';
   const requiredMissing = !byDate.has(toISODate(requiredDate));
   const todayBusiness = isBusinessDay(today);
   const todayMissing = todayBusiness && !byDate.has(toISODate(today));
@@ -40,11 +40,11 @@ export function DailyReportGate({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (user && !isAdmin) refresh();
+    if (user && !isPrivileged) refresh();
     else setLoaded(true);
-  }, [user, isAdmin]);
+  }, [user, isPrivileged]);
 
-  if (isAdmin) return <>{children}</>;
+  if (isPrivileged) return <>{children}</>;
 
   return (
     <>
