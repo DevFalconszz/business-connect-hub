@@ -18,6 +18,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,6 +34,30 @@ const SERPAPI_KEYS = [
 let currentKeyIndex = 0;
 let exhaustedKeys = new Set<number>();
 let lastHealthCheckMs = 0;
+let currentUserId: string | null = null;
+
+/**
+ * Identifica o usuário autenticado (JWT) que disparou a requisição,
+ * para atribuir o uso do crédito SerpAPI na tela do admin (Gestão de Usuários).
+ */
+async function resolveUserId(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token) return null;
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !supabaseKey) return null;
+    const sb = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { data, error } = await sb.auth.getUser(token);
+    if (error) return null;
+    return data?.user?.id || null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Marca chaves esgotadas (créditos zerados) consultando os últimos snapshots
@@ -129,6 +154,7 @@ async function logApiUsage(
         status,
         http_code: httpCode,
         detail: detail || null,
+        user_id: currentUserId || null,
       }),
     });
   } catch {
@@ -366,6 +392,8 @@ async function verifyOne(item: Item): Promise<Verification> {
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  currentUserId = await resolveUserId(req);
 
   try {
     const body = await req.json().catch(() => ({}));

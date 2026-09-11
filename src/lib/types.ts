@@ -58,6 +58,9 @@ export interface AdminUser {
   last_sign_in_at: string | null;
   deleted_at: string | null;
   lead_count: number;
+  buscas_total: number;
+  buscas_sucesso: number;
+  buscas_erro: number;
 }
 
 export interface DailyReport {

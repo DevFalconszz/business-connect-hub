@@ -206,7 +206,7 @@ export default function DashboardAdmin() {
     }
     try {
       const created = await createAdminUser(newUser.email, newUser.password, newUser.name, newUser.role);
-      setUsers((prev) => [{ ...created, created_at: new Date().toISOString(), last_sign_in_at: null, deleted_at: null, lead_count: 0 }, ...prev]);
+      setUsers((prev) => [{ ...created, created_at: new Date().toISOString(), last_sign_in_at: null, deleted_at: null, lead_count: 0, buscas_total: 0, buscas_sucesso: 0, buscas_erro: 0 }, ...prev]);
       setShowCreateUserModal(false);
       setNewUser({ email: '', password: '', name: '', role: 'sdr' });
       toast.success('Usuário criado com sucesso.');
@@ -900,6 +900,8 @@ export default function DashboardAdmin() {
                         <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground">Email</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Função</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Leads</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Buscas</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Erros</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Criado em</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Último Acesso</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Ações</th>
@@ -920,6 +922,14 @@ export default function DashboardAdmin() {
                             </Badge>
                           </td>
                           <td className="px-3 py-2 text-center">{u.lead_count}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span title="Busca no Google Maps + abertura de fichas (place) — cada uma gasta 1 crédito da chave SerpAPI.">
+                              {u.buscas_sucesso ?? 0}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-center text-red-500" title="Chamadas com erro (chave esgotada, inválida, etc).">
+                            {u.buscas_erro ?? 0}
+                          </td>
                           <td className="px-3 py-2 text-center text-muted-foreground text-xs">
                             {new Date(u.created_at).toLocaleDateString('pt-BR')}
                           </td>
@@ -949,7 +959,7 @@ export default function DashboardAdmin() {
                       ))}
                       {users.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                          <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
                             Nenhum usuário cadastrado.
                           </td>
                         </tr>
