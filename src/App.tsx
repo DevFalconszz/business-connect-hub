@@ -25,11 +25,10 @@ function RedirectTM({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** Protege a rota /tm: somente o cargo TM (e admin via /dashboard) acessam. */
+/** Protege a rota /tm: acessível a TM e admin (dashboard e gerenciamento já estão liberados ao admin). */
 function TMRoute({ children }: { children: React.ReactNode }) {
   const { role } = useAuth();
-  if (role === 'admin') return <Navigate to="/dashboard" replace />;
-  if (role !== 'tm') return <Navigate to="/" replace />;
+  if (role !== 'tm' && role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 

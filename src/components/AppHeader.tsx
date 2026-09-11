@@ -8,21 +8,21 @@ interface Tab {
   to: string;
   label: string;
   icon: typeof ClipboardList;
-  role?: 'admin' | 'tm';
+  roles?: Array<'admin' | 'tm'>;
 }
 
 const tabs: Tab[] = [
   { to: '/', label: 'Gestão de Leads', icon: ClipboardList },
   { to: '/prospectar', label: 'Prospectar', icon: Radar },
-  { to: '/dashboard', label: 'Dashboard', icon: BarChart3, role: 'admin' },
-  { to: '/tm', label: 'Gestor de Tráfego', icon: Gauge, role: 'tm' },
+  { to: '/dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
+  { to: '/tm', label: 'Gestor de Tráfego', icon: Gauge, roles: ['admin', 'tm'] },
 ];
 
 export function AppHeader() {
   const location = useLocation();
   const { signOut, user, role } = useAuth();
 
-  const visibleTabs = tabs.filter((tab) => !tab.role || tab.role === role);
+  const visibleTabs = tabs.filter((tab) => !tab.roles || (role && tab.roles.includes(role)));
 
   return (
     <header className="border-b border-border bg-card text-foreground sticky top-0 z-30">
