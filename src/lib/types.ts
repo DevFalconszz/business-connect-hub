@@ -61,6 +61,7 @@ export interface AdminUser {
   buscas_total: number;
   buscas_sucesso: number;
   buscas_erro: number;
+  creditos: number;
 }
 
 export interface DailyReport {

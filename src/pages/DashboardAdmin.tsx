@@ -206,7 +206,7 @@ export default function DashboardAdmin() {
     }
     try {
       const created = await createAdminUser(newUser.email, newUser.password, newUser.name, newUser.role);
-      setUsers((prev) => [{ ...created, created_at: new Date().toISOString(), last_sign_in_at: null, deleted_at: null, lead_count: 0, buscas_total: 0, buscas_sucesso: 0, buscas_erro: 0 }, ...prev]);
+      setUsers((prev) => [{ ...created, created_at: new Date().toISOString(), last_sign_in_at: null, deleted_at: null, lead_count: 0, buscas_total: 0, buscas_sucesso: 0, buscas_erro: 0, creditos: 0 }, ...prev]);
       setShowCreateUserModal(false);
       setNewUser({ email: '', password: '', name: '', role: 'sdr' });
       toast.success('Usuário criado com sucesso.');
@@ -900,8 +900,9 @@ export default function DashboardAdmin() {
                         <th className="px-3 py-2.5 text-left font-semibold text-xs text-muted-foreground">Email</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Função</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Leads</th>
-                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Buscas</th>
-                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Erros</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground" title="Pesquisas de prospecção feitas (1 por pesquisa/página)">Buscas</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground" title="Total de créditos SerpAPI consumidos (busca + fichas + verificação de anúncios)">Créditos</th>
+                        <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground" title="Pesquisas de prospecção que falharam">Erros</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Criado em</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Último Acesso</th>
                         <th className="px-3 py-2.5 text-center font-semibold text-xs text-muted-foreground">Ações</th>
@@ -925,11 +926,16 @@ export default function DashboardAdmin() {
                           </td>
                           <td className="px-3 py-2 text-center">{u.lead_count}</td>
                           <td className="px-3 py-2 text-center">
-                            <span title="Busca no Google Maps + abertura de fichas (place) — cada uma gasta 1 crédito da chave SerpAPI.">
+                            <span title="Pesquisas de prospecção feitas na tela de Prospectar (1 por pesquisa/página).">
                               {u.buscas_sucesso ?? 0}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-center text-red-500" title="Chamadas com erro (chave esgotada, inválida, etc).">
+                          <td className="px-3 py-2 text-center">
+                            <span title="Total de créditos SerpAPI consumidos — inclui a busca + abertura de fichas (place) + verificação de anúncios (detect-ads).">
+                              {u.creditos ?? 0}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-center text-red-500" title="Pesquisas de prospecção que falharam (chave esgotada, inválida, etc).">
                             {u.buscas_erro ?? 0}
                           </td>
                           <td className="px-3 py-2 text-center text-muted-foreground text-xs">
@@ -961,7 +967,7 @@ export default function DashboardAdmin() {
                       ))}
                       {users.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                          <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                             Nenhum usuário cadastrado.
                           </td>
                         </tr>
