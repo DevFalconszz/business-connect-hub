@@ -12,8 +12,8 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { to: '/', label: 'Gestão de Leads', icon: ClipboardList },
-  { to: '/prospectar', label: 'Prospectar', icon: Radar },
+  { to: '/', label: 'Gestão de Leads', icon: ClipboardList, roles: ['admin', 'sdr'] },
+  { to: '/prospectar', label: 'Prospectar', icon: Radar, roles: ['admin', 'sdr'] },
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
   { to: '/tm', label: 'Gestor de Tráfego', icon: Gauge, roles: ['admin', 'tm'] },
 ];

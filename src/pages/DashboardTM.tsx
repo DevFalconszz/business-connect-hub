@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Target, TrendingUp, Inbox, Activity, CheckCircle2, XCircle, RefreshCw, Users,
   Megaphone, ShieldOff, HelpCircle, Plus, Pencil, Trash2, AlertTriangle, Megaphone as AdIcon,
+  MapPin, User2, CalendarDays, Building2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,17 @@ const fmtMoney = (v: number) =>
   (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 const fmtNum = (v: number) => (v ?? 0).toLocaleString('pt-BR');
+
+const AVATAR_COLORS = ['bg-purple-500/15 text-purple-500', 'bg-sky-500/15 text-sky-500', 'bg-emerald-500/15 text-emerald-500', 'bg-rose-500/15 text-rose-500', 'bg-amber-500/15 text-amber-500', 'bg-indigo-500/15 text-indigo-500'];
+
+const initials = (name: string) =>
+  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+
+const avatarColor = (name: string) => {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+};
 
 interface CampaignForm {
   id?: string;
@@ -462,73 +473,131 @@ export default function DashboardTM() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
             <CardTitle className="text-base">Leads Recentes</CardTitle>
+            <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">
+              {data?.recentes?.length ?? 0} últimos
+            </span>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                  <th className="px-2 py-2">Nome</th>
-                  <th className="px-2 py-2">Cidade</th>
-                  <th className="px-2 py-2 text-center">Status</th>
-                  <th className="px-2 py-2 text-center">Anúncio</th>
-                  <th className="px-2 py-2">Origem</th>
-                  <th className="px-2 py-2">Campanha</th>
-                  <th className="px-2 py-2">Responsável</th>
-                  <th className="px-2 py-2">Criado em</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.recentes ?? []).length === 0 && (
-                  <tr><td colSpan={8} className="px-2 py-6 text-center text-muted-foreground">Nenhum lead recente.</td></tr>
-                )}
-                {(data?.recentes ?? []).map((r) => (
-                  <tr key={r.id} className="border-b border-border/50">
-                    <td className="px-2 py-2 font-medium max-w-[220px] truncate">{r.name}</td>
-                    <td className="px-2 py-2 text-muted-foreground">{r.city}{r.state ? ` - ${r.state}` : ''}</td>
-                    <td className="px-2 py-2 text-center">
-                      <Badge variant="outline" className="text-xs" style={{ color: STATUS_COLORS[r.status] ?? '#94a3b8', borderColor: STATUS_COLORS[r.status] ?? '#94a3b8' }}>
-                        {STATUS_LABELS[r.status as LeadStatus] ?? r.status}
-                      </Badge>
-                    </td>
-                    <td className="px-2 py-2">
-                      {r.has_ads == null ? (
-                        <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/40">A verificar</Badge>
-                      ) : r.has_ads ? (
-                        <Badge variant="outline" className="text-xs text-green-600 border-green-500/40 bg-green-500/10">
-                          <Megaphone className="w-3 h-3 mr-1" />{r.google_ads_count ?? 0} anúncio{r.google_ads_count === 1 ? '' : 's'}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs text-muted-foreground border-border"><ShieldOff className="w-3 h-3 mr-1" />Sem anúncio</Badge>
-                      )}
-                      <div className="flex gap-1 mt-1">
-                        <button onClick={() => handleAds(r.id, true)} className="text-[10px] text-green-600 hover:underline" title="Marcar que tem anúncio">Tem</button>
-                        <button onClick={() => handleAds(r.id, false)} className="text-[10px] text-muted-foreground hover:underline" title="Marcar que não tem anúncio">Sem</button>
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 text-xs">{ORIGEM_LABELS[r.source ?? 'sem_origem'] ?? r.source ?? '—'}</td>
-                    <td className="px-2 py-2">
-                      <select
-                        className="bg-accent border border-border rounded-md text-xs px-2 py-1 max-w-[130px]"
-                        value={r.campaign_id ?? ''}
-                        onChange={(e) => handleLink(r.id, e.target.value)}
-                      >
-                        <option value="">Sem campanha</option>
-                        {(data?.campanhas ?? []).map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-2 py-2">{r.responsavel || '—'}</td>
-                    <td className="px-2 py-2 text-muted-foreground text-xs">
-                      {new Date(r.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                    </td>
+          <CardContent className="px-4 pb-4">
+            <div className="overflow-x-auto rounded-xl border border-border/60">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground bg-accent/60">
+                    <th className="px-4 py-3 font-semibold">Lead</th>
+                    <th className="px-3 py-3 font-semibold">Cidade</th>
+                    <th className="px-3 py-3 text-center font-semibold">Status</th>
+                    <th className="px-3 py-3 text-center font-semibold">Anúncio</th>
+                    <th className="px-3 py-3 font-semibold">Origem</th>
+                    <th className="px-3 py-3 font-semibold">Campanha</th>
+                    <th className="px-3 py-3 font-semibold">Responsável</th>
+                    <th className="px-3 py-3 font-semibold">Criado em</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(data?.recentes ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                        Nenhum lead recente.
+                      </td>
+                    </tr>
+                  )}
+                  {(data?.recentes ?? []).map((r, i) => (
+                    <tr key={r.id} className={`hover:bg-accent/40 transition-colors ${i % 2 === 1 ? 'bg-accent/20' : ''}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${avatarColor(r.name)}`}>
+                            {initials(r.name)}
+                          </span>
+                          <span className="font-medium text-foreground max-w-[230px] truncate" title={r.name}>
+                            {r.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
+                          {r.city || '—'}{r.state ? ` - ${r.state}` : ''}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <span
+                          className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
+                          style={{
+                            color: STATUS_COLORS[r.status] ?? '#94a3b8',
+                            backgroundColor: `${STATUS_COLORS[r.status] ?? '#94a3b8'}1a`,
+                            border: `1px solid ${(STATUS_COLORS[r.status] ?? '#94a3b8')}55`,
+                          }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[r.status] ?? '#94a3b8' }} />
+                          {STATUS_LABELS[r.status as LeadStatus] ?? r.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col items-center gap-1.5">
+                          {r.has_ads == null ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full text-amber-500 bg-amber-500/10 border border-amber-500/30">
+                              <HelpCircle className="w-3 h-3" /> A verificar
+                            </span>
+                          ) : r.has_ads ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full text-green-600 bg-green-500/10 border border-green-500/30">
+                              <Megaphone className="w-3 h-3" /> {r.google_ads_count ?? 0} anúncio{r.google_ads_count === 1 ? '' : 's'}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full text-muted-foreground bg-accent border border-border">
+                              <ShieldOff className="w-3 h-3" /> Sem anúncio
+                            </span>
+                          )}
+                          <div className="inline-flex rounded-full border border-border overflow-hidden text-[10px]">
+                            <button
+                              onClick={() => handleAds(r.id, true)}
+                              className={`px-2 py-0.5 transition-colors ${r.has_ads ? 'text-green-600 bg-green-500/10' : 'text-muted-foreground hover:bg-accent'}`}
+                              title="Tem anúncio"
+                            >Tem</button>
+                            <button
+                              onClick={() => handleAds(r.id, false)}
+                              className={`px-2 py-0.5 transition-colors ${r.has_ads === false ? 'text-muted-foreground bg-accent' : 'text-muted-foreground hover:bg-accent'}`}
+                              title="Sem anúncio"
+                            >Sem</button>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-border text-muted-foreground bg-card">
+                          <Building2 className="w-3 h-3" />
+                          {ORIGEM_LABELS[r.source ?? 'sem_origem'] ?? r.source ?? '—'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <select
+                          className="bg-card border border-border rounded-lg text-xs px-2 py-1.5 max-w-[140px] focus:outline-none focus:ring-2 focus:ring-gold-500/40"
+                          value={r.campaign_id ?? ''}
+                          onChange={(e) => handleLink(r.id, e.target.value)}
+                        >
+                          <option value="">Sem campanha</option>
+                          {(data?.campanhas ?? []).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
+                          <User2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
+                          {r.responsavel || '—'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-muted-foreground whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 text-xs">
+                          <CalendarDays className="w-3.5 h-3.5 shrink-0 text-muted-foreground/60" />
+                          {new Date(r.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
