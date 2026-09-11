@@ -30,6 +30,11 @@ export interface Lead {
   meeting_dates: string[];
   nome_decisor: string;
   numero_decisor: string;
+  has_ads?: boolean | null;
+  meta_has_ads?: boolean | null;
+  google_ads_count?: number;
+  source?: string | null;
+  campaign_id?: string | null;
 }
 
 export interface AdminLead extends Lead {
@@ -134,6 +139,10 @@ export interface TmRecentLead {
   status: string;
   responsavel: string;
   created_at: string;
+  has_ads?: boolean | null;
+  google_ads_count?: number;
+  source?: string | null;
+  campaign_id?: string | null;
 }
 
 export interface TmByOwner {
@@ -142,10 +151,37 @@ export interface TmByOwner {
   vendas: number;
 }
 
+export interface TmAdsStats {
+  tem: number;
+  sem: number;
+  nao_verificado: number;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  platform: string;
+  status: string;
+  objective: string;
+  budget: number;
+  spent: number;
+  impressions: number;
+  clicks: number;
+  start_date: string | null;
+  end_date: string | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  leads_count: number;
+}
+
 export interface TmDashboard {
   total: number;
   total_hoje: number;
   funil: Partial<Record<LeadStatus, number>>;
+  ads: TmAdsStats;
   por_responsavel: TmByOwner[];
+  por_origem: { origem: string; total: number }[];
+  campanhas: Campaign[];
   recentes: TmRecentLead[];
 }

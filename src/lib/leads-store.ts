@@ -32,6 +32,11 @@ function rowToLead(row: any): Lead {
     meeting_dates: row.meeting_dates || [],
     nome_decisor: row.nome_decisor || '',
     numero_decisor: row.numero_decisor || '',
+    has_ads: row.has_ads ?? null,
+    meta_has_ads: row.meta_has_ads ?? null,
+    google_ads_count: row.google_ads_count ?? 0,
+    source: row.source ?? null,
+    campaign_id: row.campaign_id ?? null,
   };
 }
 
@@ -50,6 +55,10 @@ export async function insertLead(lead: Omit<Lead, 'id'>): Promise<Lead | null> {
     instagram: lead.instagram, responsavel: lead.responsavel, descricao: lead.descricao,
     status: lead.status, whatsapp_group: lead.whatsapp_group, meeting_dates: lead.meeting_dates,
     nome_decisor: lead.nome_decisor, numero_decisor: lead.numero_decisor,
+    has_ads: lead.has_ads ?? null,
+    meta_has_ads: lead.meta_has_ads ?? null,
+    google_ads_count: lead.google_ads_count ?? 0,
+    source: lead.source ?? null,
     user_id: user?.id,
   }).select().single();
   if (error) { console.error('Error inserting lead:', error); return null; }

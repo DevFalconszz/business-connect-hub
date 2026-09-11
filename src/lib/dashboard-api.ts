@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { AdminDailyReport, AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, SerpapiAccountUsage, SerpapiUsagePoint, TmDashboard } from './types';
+import { AdminDailyReport, AdminLead, AdminUser, ApiUsageStats, ApiUsageSummary, Campaign, SerpapiAccountUsage, SerpapiUsagePoint, TmDashboard } from './types';
 
 export async function fetchTmDashboard(): Promise<TmDashboard | null> {
   const { data, error } = await (supabase.rpc as any)('tm_dashboard');
@@ -8,6 +8,78 @@ export async function fetchTmDashboard(): Promise<TmDashboard | null> {
     throw error;
   }
   return (data as TmDashboard) || null;
+}
+
+export async function saveTmCampaign(input: {
+  id?: string;
+  name: string;
+  platform: string;
+  status: string;
+  objective: string;
+  budget: number;
+  spent: number;
+  impressions: number;
+  clicks: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  notes: string;
+}): Promise<Campaign | null> {
+  const { data, error } = await (supabase.rpc as any)('tm_save_campaign', {
+    p_id: input.id ?? null,
+    p_name: input.name,
+    p_platform: input.platform,
+    p_status: input.status,
+    p_objective: input.objective,
+    p_budget: input.budget,
+    p_spent: input.spent,
+    p_impressions: input.impressions,
+    p_clicks: input.clicks,
+    p_start_date: input.start_date || null,
+    p_end_date: input.end_date || null,
+    p_notes: input.notes,
+  });
+  if (error) {
+    console.error('Erro ao salvar campanha:', error);
+    throw error;
+  }
+  return (data as Campaign | null);
+}
+
+export async function deleteTmCampaign(id: string): Promise<void> {
+  const { error } = await (supabase.rpc as any)('tm_delete_campaign', { p_id: id });
+  if (error) {
+    console.error('Erro ao excluir campanha:', error);
+    throw error;
+  }
+}
+
+export async function linkLeadToCampaign(leadId: string, campaignId: string | null): Promise<void> {
+  const { error } = await (supabase.rpc as any)('tm_link_lead', {
+    p_lead_id: leadId,
+    p_campaign_id: campaignId,
+  });
+  if (error) {
+    console.error('Erro ao vincular lead à campanha:', error);
+    throw error;
+  }
+}
+
+export async function updateLeadAds(
+  leadId: string,
+  hasAds: boolean,
+  metaHasAds: boolean | null,
+  googleAdsCount: number | null,
+): Promise<void> {
+  const { error } = await (supabase.rpc as any)('tm_update_lead_ads', {
+    p_lead_id: leadId,
+    p_has_ads: hasAds,
+    p_meta_has_ads: metaHasAds,
+    p_google_ads_count: googleAdsCount,
+  });
+  if (error) {
+    console.error('Erro ao atualizar verificação de anúncio:', error);
+    throw error;
+  }
 }
 
 export async function fetchAdminLeads(): Promise<AdminLead[]> {

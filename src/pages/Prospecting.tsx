@@ -180,6 +180,10 @@ export default function Prospecting() {
       reviews_count: toStr(result.reviews_count), instagram: toStr(result.instagram),
       responsavel: responsavel, descricao: '', status: 'analise_pendente',
       whatsapp_group: '', meeting_dates: [], nome_decisor: '', numero_decisor: '',
+      has_ads: result.has_ads ?? null,
+      meta_has_ads: result.meta_has_ads ?? null,
+      google_ads_count: result.google_ads_count ?? 0,
+      source: 'prospeccao',
     };
 
     const inserted = await insertLead(lead);
