@@ -16,6 +16,7 @@ import {
   fetchTmDashboard, saveTmCampaign, deleteTmCampaign, linkLeadToCampaign, updateLeadAds,
 } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
+import { initials, avatarColor } from '@/lib/avatars';
 
 const STATUS_COLORS: Record<string, string> = {
   analise_pendente: '#f59e0b',
@@ -58,17 +59,6 @@ const fmtMoney = (v: number) =>
   (v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 const fmtNum = (v: number) => (v ?? 0).toLocaleString('pt-BR');
-
-const AVATAR_COLORS = ['bg-purple-500/15 text-purple-500', 'bg-sky-500/15 text-sky-500', 'bg-emerald-500/15 text-emerald-500', 'bg-rose-500/15 text-rose-500', 'bg-amber-500/15 text-amber-500', 'bg-indigo-500/15 text-indigo-500'];
-
-const initials = (name: string) =>
-  name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
-
-const avatarColor = (name: string) => {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return AVATAR_COLORS[h % AVATAR_COLORS.length];
-};
 
 interface CampaignForm {
   id?: string;
