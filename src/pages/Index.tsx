@@ -59,19 +59,21 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <div className="border-b border-border bg-card/80">
         <div className="max-w-[1600px] mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <div className="relative flex-1 md:min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input className="pl-10 h-11 text-sm rounded-xl bg-background border-input focus:border-gold-500 focus:ring-gold-500" placeholder="Buscar por nome, cidade, decisor, responsável..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input className="pl-10 h-11 text-sm rounded-xl bg-background border-input focus:border-gold-500 focus:ring-gold-500 w-full" placeholder="Buscar por nome, cidade, decisor, responsável..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <div className="flex gap-2">
-              <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'cards' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
-              <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'table' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
+            <div className="flex items-center gap-2 shrink-0 md:justify-end">
+              <div className="flex gap-2">
+                <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'cards' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('cards')}><LayoutGrid className="w-4 h-4" /></Button>
+                <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" className={`h-11 w-11 p-0 rounded-xl ${viewMode === 'table' ? 'bg-gold-500 hover:bg-gold-600 text-black' : ''}`} onClick={() => setViewMode('table')}><Table2 className="w-4 h-4" /></Button>
+              </div>
+              <Button className="h-11 rounded-xl px-4 text-sm bg-gold-500 text-black hover:bg-gold-600" onClick={() => setShowAdd(true)}>
+                <Plus className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Adicionar</span><span className="sm:hidden">Novo</span>
+              </Button>
+              <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">{leads.length} leads</span>
             </div>
-            <Button className="h-11 rounded-xl px-4 text-sm bg-gold-500 text-black hover:bg-gold-600" onClick={() => setShowAdd(true)}>
-              <Plus className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Adicionar</span><span className="sm:hidden">Novo</span>
-            </Button>
-            <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">{leads.length} leads</span>
           </div>
         </div>
       </div>

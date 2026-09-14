@@ -26,38 +26,49 @@ export function AppHeader() {
 
   return (
     <header className="border-b border-border bg-card text-foreground sticky top-0 z-30">
-      <div className="max-w-[1600px] mx-auto px-4">
-        <div className="flex items-center gap-6 h-14">
-          <span className="text-lg font-bold text-gold-500 shrink-0 flex items-center gap-2">
-            <img src="/logo.png" alt="CRM MI" className="h-9 w-9 object-contain" />
-            CRM MI
-          </span>
-          {isLocal() && (
-            <span className="text-[10px] font-mono bg-gold-500/20 text-gold-400 px-2 py-0.5 rounded-full border border-gold-500/30">
-              LOCAL
+      <div className="max-w-[1600px] mx-auto px-3 md:px-4">
+        <div className="flex flex-col md:flex-row md:items-center md:gap-4 py-2 md:py-0 md:h-14">
+          <div className="flex items-center justify-between w-full md:w-auto md:justify-start gap-3">
+            <span className="text-lg font-bold text-gold-500 shrink-0 flex items-center gap-2">
+              <img src="/logo.png" alt="CRM MI" className="h-9 w-9 object-contain" />
+              CRM MI
             </span>
-          )}
-          <nav className="flex gap-1 ml-auto">
+            {isLocal() && (
+              <span className="text-[10px] font-mono bg-gold-500/20 text-gold-400 px-2 py-0.5 rounded-full border border-gold-500/30">
+                LOCAL
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="md:hidden text-muted-foreground hover:text-foreground hover:bg-accent h-9 px-3 -mr-1"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="ml-1">Sair</span>
+            </Button>
+          </div>
+          <nav className="flex gap-1 md:ml-auto mt-2 md:mt-0 overflow-x-auto">
             {visibleTabs.map(tab => {
               const active = location.pathname === tab.to;
               return (
                 <NavLink
                   key={tab.to}
                   to={tab.to}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                     active
                       ? 'bg-gold-500 text-black'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
+                  <tab.icon className="w-4 h-4 shrink-0" />
                   <span className="hidden sm:inline">{tab.label}</span>
                 </NavLink>
               );
             })}
           </nav>
-          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-border">
-            <span className="text-xs text-muted-foreground hidden sm:inline">
+          <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-border">
+            <span className="text-xs text-muted-foreground hidden sm:inline whitespace-nowrap">
               {user?.user_metadata?.full_name || user?.email || ''}
             </span>
             <Button
