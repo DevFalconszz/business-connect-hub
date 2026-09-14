@@ -30,7 +30,7 @@ export function AppHeader() {
         <div className="flex flex-col md:flex-row md:items-center md:gap-4 py-2 md:py-0 md:h-14">
           <div className="flex items-center justify-between w-full md:w-auto md:justify-start gap-3">
             <span className="text-lg font-bold text-gold-500 shrink-0 flex items-center gap-2">
-              <img src="/logo.png" alt="CRM MI" className="h-9 w-9 object-contain" />
+              <img src="/logo.png" alt="CRM MI" className="h-9 w-9 object-cover rounded-full" />
               CRM MI
             </span>
             {isLocal() && (

@@ -51,7 +51,7 @@ export default function Auth() {
       <Card className="w-full max-w-md bg-card border-border shadow-2xl">
         <CardHeader className="text-center pb-2">
           <div className="flex flex-col items-center justify-center gap-3 mb-4">
-            <img src="/logo.png" alt="CRM MI" className="h-24 w-24 object-contain" />
+            <img src="/logo.png" alt="CRM MI" className="h-24 w-24 object-cover rounded-full" />
             <span className="text-2xl font-bold text-foreground">CRM MI</span>
           </div>
           <CardTitle className="text-xl text-muted-foreground font-normal">
