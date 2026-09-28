@@ -37,6 +37,7 @@ function rowToLead(row: any): Lead {
     google_ads_count: row.google_ads_count ?? 0,
     source: row.source ?? null,
     campaign_id: row.campaign_id ?? null,
+    user_id: row.user_id ?? null,
   };
 }
 
@@ -96,6 +97,15 @@ export async function updateLead(lead: Lead): Promise<boolean> {
 export async function deleteLead(id: string): Promise<boolean> {
   const { error } = await supabase.from('leads').delete().eq('id', id);
   if (error) { console.error('Error deleting lead:', error); return false; }
+  return true;
+}
+
+export async function transferLead(leadId: string, targetUserId: string, targetUserName: string): Promise<boolean> {
+  const { error } = await supabase.from('leads').update({
+    user_id: targetUserId,
+    responsavel: targetUserName,
+  }).eq('id', leadId);
+  if (error) { console.error('Error transferring lead:', error); return false; }
   return true;
 }
 

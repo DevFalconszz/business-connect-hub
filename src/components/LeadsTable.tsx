@@ -1,14 +1,26 @@
-import { Lead } from '@/lib/types';
+import { useState } from 'react';
+import { Lead, AdminUser } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { Button } from '@/components/ui/button';
-import { Eye, MapPin, Phone, User2, PackageOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Eye, MapPin, Phone, User2, PackageOpen, Trash2, ArrowRightLeft } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { initials, avatarColor } from '@/lib/avatars';
 
 interface Props {
   leads: Lead[];
   onOpenLead: (lead: Lead) => void;
   onUpdateLead: (lead: Lead) => void;
+  role?: string | null;
+  users?: AdminUser[];
+  onDeleteLead?: (id: string) => void;
+  onTransferLead?: (leadId: string, targetUserId: string, targetUserName: string) => void;
 }
 
 const statusRowBg: Record<string, string> = {
@@ -30,13 +42,7 @@ function EditableCell({ value, onChange, className = '' }: { value: string; onCh
   );
 }
 
-function IconCell({
-  icon,
-  value,
-  onChange,
-  onUpdate,
-  className = '',
-}: { icon: React.ReactNode; value: string; onChange: (v: string) => void; className?: string }) {
+function IconCell({ icon, value, onChange, className = '' }: { icon: React.ReactNode; value: string; onChange: (v: string) => void; className?: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-muted-foreground/50 shrink-0">{icon}</span>
@@ -45,99 +51,172 @@ function IconCell({
   );
 }
 
-export function LeadsTable({ leads, onOpenLead, onUpdateLead }: Props) {
+export function LeadsTable({ leads, onOpenLead, onUpdateLead, role, users = [], onDeleteLead, onTransferLead }: Props) {
+  const isAdmin = role === 'admin';
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [transferTarget, setTransferTarget] = useState<Lead | null>(null);
+  const [transferUserId, setTransferUserId] = useState('');
+
+  const handleDelete = () => {
+    if (deleteTarget && onDeleteLead) {
+      onDeleteLead(deleteTarget.id);
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleTransfer = () => {
+    if (transferTarget && transferUserId && onTransferLead) {
+      const targetUser = users.find((u) => u.id === transferUserId);
+      if (targetUser) {
+        onTransferLead(transferTarget.id, targetUser.id, targetUser.name || targetUser.email);
+        setTransferTarget(null);
+        setTransferUserId('');
+      }
+    }
+  };
+
   return (
-    <div className="border border-border/70 rounded-xl bg-card shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground bg-accent/60">
-              <th className="sticky left-0 z-10 bg-accent/70 backdrop-blur px-4 py-3 font-semibold whitespace-nowrap">Nome</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Status</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Nicho</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Cidade</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Telefone</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Nome Decisor</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Número Decisor</th>
-              <th className="px-3 py-3 font-semibold whitespace-nowrap">Responsável</th>
-              <th className="sticky right-0 z-10 bg-accent/70 backdrop-blur px-4 py-3 text-center font-semibold whitespace-nowrap">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead, i) => (
-              <tr
-                key={lead.id}
-                className={`hover:bg-accent/40 transition-colors ${statusRowBg[lead.status] || ''} ${i % 2 === 1 ? 'bg-accent/20' : ''}`}
-              >
-                <td className="sticky left-0 z-10 bg-card px-4 py-2 font-medium whitespace-nowrap">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${avatarColor(lead.name)}`}>
-                      {initials(lead.name)}
-                    </span>
-                    <EditableCell
-                      value={lead.name}
-                      onChange={(v) => onUpdateLead({ ...lead, name: v })}
-                      className="font-medium w-[180px]"
-                    />
-                  </div>
-                </td>
-                <td className="px-3 py-2">
-                  <StatusSelect value={lead.status} onChange={(s) => onUpdateLead({ ...lead, status: s })} />
-                </td>
-                <td className="px-3 py-2">
-                  <EditableCell value={lead.category} onChange={(v) => onUpdateLead({ ...lead, category: v })} className="w-[120px]" />
-                </td>
-                <td className="px-3 py-2">
-                  <IconCell
-                    icon={<MapPin className="w-3.5 h-3.5" />}
-                    value={lead.city}
-                    onChange={(v) => onUpdateLead({ ...lead, city: v })}
-                    className="w-[110px]"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <IconCell
-                    icon={<Phone className="w-3.5 h-3.5" />}
-                    value={lead.phone}
-                    onChange={(v) => onUpdateLead({ ...lead, phone: v })}
-                    className="w-[130px] font-mono-num"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <EditableCell value={lead.nome_decisor} onChange={(v) => onUpdateLead({ ...lead, nome_decisor: v })} className="w-[130px]" />
-                </td>
-                <td className="px-3 py-2">
-                  <EditableCell value={lead.numero_decisor} onChange={(v) => onUpdateLead({ ...lead, numero_decisor: v })} className="w-[130px] font-mono-num" />
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  <span className="flex items-center gap-1.5 text-xs text-foreground">
-                    <User2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-                    {lead.responsavel || '—'}
-                  </span>
-                </td>
-                <td className="sticky right-0 z-10 bg-card px-4 py-2 text-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-full hover:bg-accent"
-                    onClick={() => onOpenLead(lead)}
-                    title="Ver detalhes"
-                  >
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                </td>
+    <>
+      <div className="border border-border/70 rounded-xl bg-card shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wider text-muted-foreground bg-accent/60">
+                <th className="sticky left-0 z-10 bg-accent/70 backdrop-blur px-4 py-3 font-semibold whitespace-nowrap">Nome</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Status</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Nicho</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Cidade</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Telefone</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Nome Decisor</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Número Decisor</th>
+                <th className="px-3 py-3 font-semibold whitespace-nowrap">Responsável</th>
+                <th className="sticky right-0 z-10 bg-accent/70 backdrop-blur px-4 py-3 text-center font-semibold whitespace-nowrap">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {leads.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground">
-          <PackageOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium text-foreground">Nenhum lead encontrado</p>
-          <p className="text-sm mt-1">Adicione novos leads pela tela de Prospecção.</p>
+            </thead>
+            <tbody>
+              {leads.map((lead, i) => (
+                <tr
+                  key={lead.id}
+                  className={`hover:bg-accent/40 transition-colors ${statusRowBg[lead.status] || ''} ${i % 2 === 1 ? 'bg-accent/20' : ''}`}
+                >
+                  <td className="sticky left-0 z-10 bg-card px-4 py-2 font-medium whitespace-nowrap">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${avatarColor(lead.name)}`}>
+                        {initials(lead.name)}
+                      </span>
+                      <EditableCell value={lead.name} onChange={(v) => onUpdateLead({ ...lead, name: v })} className="font-medium w-[180px]" />
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <StatusSelect value={lead.status} onChange={(s) => onUpdateLead({ ...lead, status: s })} />
+                  </td>
+                  <td className="px-3 py-2">
+                    <EditableCell value={lead.category} onChange={(v) => onUpdateLead({ ...lead, category: v })} className="w-[120px]" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <IconCell icon={<MapPin className="w-3.5 h-3.5" />} value={lead.city} onChange={(v) => onUpdateLead({ ...lead, city: v })} className="w-[110px]" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <IconCell icon={<Phone className="w-3.5 h-3.5" />} value={lead.phone} onChange={(v) => onUpdateLead({ ...lead, phone: v })} className="w-[130px] font-mono-num" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <EditableCell value={lead.nome_decisor} onChange={(v) => onUpdateLead({ ...lead, nome_decisor: v })} className="w-[130px]" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <EditableCell value={lead.numero_decisor} onChange={(v) => onUpdateLead({ ...lead, numero_decisor: v })} className="w-[130px] font-mono-num" />
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className="flex items-center gap-1.5 text-xs text-foreground">
+                      <User2 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                      {lead.responsavel || '—'}
+                    </span>
+                  </td>
+                  <td className="sticky right-0 z-10 bg-card px-4 py-2 text-center">
+                    <div className="flex items-center gap-1 justify-center">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-accent" onClick={() => onOpenLead(lead)} title="Ver detalhes">
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-accent" onClick={() => { setTransferTarget(lead); setTransferUserId(lead.user_id || ''); }} title="Transferir para outro usuário">
+                            <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-red-500/10" onClick={() => setDeleteTarget(lead)} title="Excluir lead">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
-    </div>
+        {leads.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground">
+            <PackageOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p className="text-lg font-medium text-foreground">Nenhum lead encontrado</p>
+            <p className="text-sm mt-1">Adicione novos leads pela tela de Prospecção.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Diálogo de exclusão */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteTarget?.name}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de transferência */}
+      <Dialog open={!!transferTarget} onOpenChange={(o) => { if (!o) { setTransferTarget(null); setTransferUserId(''); } }}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Transferir Lead</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Transferir <strong>{transferTarget?.name}</strong> para:
+            </p>
+            <select
+              className="w-full bg-accent border border-border rounded-xl px-3 py-2 text-sm"
+              value={transferUserId}
+              onChange={(e) => setTransferUserId(e.target.value)}
+            >
+              <option value="">Selecione um usuário</option>
+              {users.filter((u) => !u.deleted_at).map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name || u.email} {u.id === transferTarget?.user_id ? '(atual)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTransferTarget(null); setTransferUserId(''); }}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-gold-500 text-black hover:bg-gold-600"
+              onClick={handleTransfer}
+              disabled={!transferUserId || transferUserId === transferTarget?.user_id}
+            >
+              Transferir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

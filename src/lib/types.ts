@@ -35,6 +35,7 @@ export interface Lead {
   google_ads_count?: number;
   source?: string | null;
   campaign_id?: string | null;
+  user_id?: string | null;
 }
 
 export interface AdminLead extends Lead {

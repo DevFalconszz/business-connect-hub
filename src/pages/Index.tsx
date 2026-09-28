@@ -1,19 +1,24 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lead } from '@/lib/types';
-import { loadLeads, insertLead, updateLead } from '@/lib/leads-store';
+import { Lead, AdminUser } from '@/lib/types';
+import { loadLeads, insertLead, updateLead, deleteLead, transferLead } from '@/lib/leads-store';
 import { LeadsTable } from '@/components/LeadsTable';
 import { LeadCard } from '@/components/LeadCard';
 import { LeadModal } from '@/components/LeadModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { Plus, Search, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchAdminUsers } from '@/lib/dashboard-api';
 import { toast } from 'sonner';
 import { detectEnv } from '@/lib/env-check';
 
 const Index = () => {
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -26,8 +31,9 @@ const Index = () => {
   useEffect(() => {
     detectEnv().then(() => {
       loadLeads().then(data => { setLeads(data); setLoading(false); });
+      if (isAdmin) fetchAdminUsers().then(setUsers).catch(() => {});
     });
-  }, []);
+  }, [isAdmin]);
 
   const handleUpdateLead = useCallback(async (updated: Lead) => {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
@@ -42,6 +48,26 @@ const Index = () => {
       toast.success('Lead adicionado!');
     } else {
       toast.error('Erro ao adicionar lead.');
+    }
+  };
+
+  const handleDeleteLead = async (id: string) => {
+    const ok = await deleteLead(id);
+    if (ok) {
+      setLeads(prev => prev.filter(l => l.id !== id));
+      toast.success('Lead excluído.');
+    } else {
+      toast.error('Erro ao excluir lead.');
+    }
+  };
+
+  const handleTransferLead = async (leadId: string, targetUserId: string, targetUserName: string) => {
+    const ok = await transferLead(leadId, targetUserId, targetUserName);
+    if (ok) {
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, user_id: targetUserId, responsavel: targetUserName } : l));
+      toast.success(`Lead transferido para ${targetUserName}.`);
+    } else {
+      toast.error('Erro ao transferir lead.');
     }
   };
 
@@ -82,7 +108,15 @@ const Index = () => {
         {loading ? (
           <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-gold-500" /></div>
         ) : viewMode === 'table' ? (
-          <LeadsTable leads={filtered} onOpenLead={setSelectedLead} onUpdateLead={handleUpdateLead} />
+          <LeadsTable
+              leads={filtered}
+              onOpenLead={setSelectedLead}
+              onUpdateLead={handleUpdateLead}
+              role={role}
+              users={users}
+              onDeleteLead={handleDeleteLead}
+              onTransferLead={handleTransferLead}
+            />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map(lead => (
