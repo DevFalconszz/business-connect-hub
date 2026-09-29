@@ -2,8 +2,9 @@ import { Lead } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, MapPin, Phone, Pencil, Check, X } from 'lucide-react';
+import { Eye, MapPin, Phone, Pencil, Check, X, User, Building2, ClipboardList } from 'lucide-react';
 import { useState } from 'react';
+import { initials, avatarColor } from '@/lib/avatars';
 
 interface Props {
   lead: Lead;
@@ -43,8 +44,8 @@ export function LeadCard({ lead, onOpenLead, onUpdateLead }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {([
             ['name', 'Nome'], ['category', 'Nicho'], ['city', 'Cidade'], ['state', 'UF'],
-            ['phone', 'Telefone'], ['nome_decisor', 'Nome Decisor'], ['numero_decisor', 'N\u00famero Decisor'],
-            ['descricao', 'Descri\u00e7\u00e3o'], ['website', 'Website'],
+            ['phone', 'Telefone'], ['nome_decisor', 'Nome Decisor'], ['numero_decisor', 'Número Decisor'],
+            ['descricao', 'Descrição'], ['website', 'Website'],
           ] as [keyof Lead, string][]).map(([key, label]) => (
             <div key={key} className={key === 'descricao' || key === 'website' ? 'sm:col-span-2' : ''}>
               <label className="text-[11px] font-medium text-muted-foreground">{label}</label>
@@ -59,9 +60,16 @@ export function LeadCard({ lead, onOpenLead, onUpdateLead }: Props) {
   return (
     <div className={`rounded-xl bg-card p-4 shadow-sm border border-border hover:shadow-md transition-shadow ${borderClass}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-foreground truncate text-base">{lead.name}</h3>
-          <p className="text-xs text-muted-foreground truncate mt-0.5">{lead.category}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          <span className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${avatarColor(lead.name)}`}>
+            {initials(lead.name)}
+          </span>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-foreground truncate text-base">{lead.name}</h3>
+            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+              {lead.category && <><Building2 className="w-3 h-3" /> {lead.category}</>}
+            </p>
+          </div>
         </div>
         <StatusSelect value={lead.status} onChange={(s) => onUpdateLead({ ...lead, status: s })} />
       </div>
@@ -73,8 +81,8 @@ export function LeadCard({ lead, onOpenLead, onUpdateLead }: Props) {
 
       {(lead.nome_decisor || lead.responsavel) && (
         <div className="mt-2 text-xs space-y-0.5">
-          {lead.nome_decisor && <p><span className="text-muted-foreground">Decisor:</span> <span className="font-medium text-foreground">{lead.nome_decisor}</span></p>}
-          {lead.responsavel && <p><span className="text-muted-foreground">Respons\u00e1vel:</span> <span className="font-medium text-foreground">{lead.responsavel}</span></p>}
+          {lead.nome_decisor && <p className="flex items-center gap-1"><User className="w-3 h-3 text-muted-foreground" /><span className="text-muted-foreground">Decisor:</span> <span className="font-medium text-foreground">{lead.nome_decisor}</span></p>}
+          {lead.responsavel && <p className="flex items-center gap-1"><ClipboardList className="w-3 h-3 text-muted-foreground" /><span className="text-muted-foreground">Responsável:</span> <span className="font-medium text-foreground">{lead.responsavel}</span></p>}
         </div>
       )}
 
