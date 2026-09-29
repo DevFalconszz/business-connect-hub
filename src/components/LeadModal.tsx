@@ -239,7 +239,7 @@ export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
             <Card className="rounded-xl border-border/70">
               <CardContent className="p-4 space-y-3">
                 <SectionTitle icon={Calendar}>Agendar Reuniões</SectionTitle>
-                <Calendar mode="single" selected={undefined} onSelect={handleDateSelect} modifiers={{ booked: selectedDates }} modifiersClassNames={{ booked: 'bg-gold-500 text-black rounded-md' }} className={cn("p-2 pointer-events-auto border border-border rounded-md")} />
+                <Calendar mode="single" selected={undefined} onSelect={handleDateSelect} modifiers={{ booked: selectedDates }} modifiersClassNames={{ booked: 'bg-gold-500 text-black rounded-md' }} className={cn("p-2 pointer-events-auto border border-border rounded-md min-w-[252px]")} />
                 {selectedDates.length > 0 && (
                   <div className="mt-2 space-y-1">
                     <p className="text-xs text-muted-foreground font-medium">Reuniões agendadas:</p>
