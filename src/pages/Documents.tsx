@@ -209,12 +209,6 @@ export default function Documents() {
     }
   };
 
-  const getFileUrl = async (filePath: string) => {
-    const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(filePath, 3600);
-    if (error) { toast.error('Erro ao gerar link.'); return null; }
-    return data.signedUrl;
-  };
-
   const handlePreview = async (doc: DocRecord) => {
     const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(doc.file_path, 3600);
     if (error) { toast.error('Erro ao abrir documento.'); return; }
@@ -271,12 +265,23 @@ export default function Documents() {
 
   const handleTemplateDownload = async (tpl: TemplateDoc) => {
     if (!tpl.file_path) return;
-    const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(tpl.file_path, 3600);
-    if (error) { toast.error('Erro ao gerar link.'); return; }
-    const a = document.createElement('a');
-    a.href = data.signedUrl;
-    a.download = tpl.file_name || `${tpl.label}.pdf`;
-    a.click();
+    try {
+      const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(tpl.file_path, 3600);
+      if (error) throw error;
+      const res = await fetch(data.signedUrl);
+      if (!res.ok) throw new Error('download failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = tpl.file_name || `${tpl.label}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error('Erro ao baixar modelo.');
+    }
   };
 
   const handleDeleteTemplate = async () => {
@@ -555,8 +560,23 @@ export default function Documents() {
                       <Eye className="w-4 h-4 text-muted-foreground" />
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Baixar" onClick={async () => {
-                      const url = await getFileUrl(doc.file_path);
-                      if (url) { const a = document.createElement('a'); a.href = url; a.download = doc.file_name; a.click(); }
+                      try {
+                        const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(doc.file_path, 3600);
+                        if (error) throw error;
+                        const res = await fetch(data.signedUrl);
+                        if (!res.ok) throw new Error('download failed');
+                        const blob = await res.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = doc.file_name;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                      } catch {
+                        toast.error('Erro ao baixar documento.');
+                      }
                     }}>
                       <Download className="w-4 h-4 text-muted-foreground" />
                     </Button>
