@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FileText, Upload, Download, Printer, Eye, Lock, LogIn,
-  ChevronLeft, CheckCircle2, XCircle, Loader2, Trash2, File,
+  ChevronLeft, CheckCircle2, XCircle, Loader2, Trash2, File, Stamp,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,24 @@ interface DocRecord {
   created_at: string;
 }
 
+interface TemplateDoc {
+  id: string;
+  label: string;
+  description: string;
+  color: string;
+  file_name: string | null;
+  file_path: string | null;
+  file_size: number | null;
+}
+
+const TEMPLATES_KEY = 'business-connect-templates';
+
+const DEFAULT_TEMPLATES: TemplateDoc[] = [
+  { id: 'tpl-contrato', label: 'Contrato', description: 'Modelo de contrato padrão para impressão ou assinatura.', color: 'text-blue-500', file_name: null, file_path: null, file_size: null },
+  { id: 'tpl-tap', label: 'TAP', description: 'Termo de Abertura de Projeto — modelo base.', color: 'text-purple-500', file_name: null, file_path: null, file_size: null },
+  { id: 'tpl-aceite', label: 'Termo de Aceite', description: 'Termo de aceite final — modelo para assinatura do cliente.', color: 'text-emerald-500', file_name: null, file_path: null, file_size: null },
+];
+
 const DOC_TYPES = [
   { value: 'contrato', label: 'Contrato', color: 'text-blue-500' },
   { value: 'tap', label: 'TAP', color: 'text-purple-500' },
@@ -60,6 +78,24 @@ const formatFileSize = (bytes: number) => {
   if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1048576).toFixed(1)} MB`;
 };
+
+function loadTemplates(): TemplateDoc[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw) as TemplateDoc[];
+      return DEFAULT_TEMPLATES.map((def) => {
+        const s = saved.find((x) => x.id === def.id);
+        return s ? { ...def, file_name: s.file_name, file_path: s.file_path, file_size: s.file_size } : def;
+      });
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_TEMPLATES;
+}
+
+function saveTemplates(tpls: TemplateDoc[]) {
+  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(tpls));
+}
 
 function PdfViewer({ url, fileName }: { url: string; fileName: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -113,6 +149,10 @@ export default function Documents() {
   const [previewDoc, setPreviewDoc] = useState<DocRecord | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [deleteDoc, setDeleteDoc] = useState<DocRecord | null>(null);
+
+  const [templates, setTemplates] = useState<TemplateDoc[]>(loadTemplates);
+  const [uploadingTemplate, setUploadingTemplate] = useState<string | null>(null);
+  const [deleteTemplate, setDeleteTemplate] = useState<TemplateDoc | null>(null);
 
   const handleLogin = () => {
     if (password === TEMP_PASSWORD) {
@@ -224,6 +264,68 @@ export default function Documents() {
     }
   };
 
+  // ─── Template handlers ─────────────────────────────────────
+
+  const handleTemplateUpload = async (templateId: string, file: File) => {
+    setUploadingTemplate(templateId);
+    try {
+      const ext = file.name.split('.').pop() || 'pdf';
+      const path = `templates/${templateId}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('client-docs')
+        .upload(path, file, { contentType: file.type, upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const updated = templates.map((t) =>
+        t.id === templateId ? { ...t, file_name: file.name, file_path: path, file_size: file.size } : t
+      );
+      setTemplates(updated);
+      saveTemplates(updated);
+      toast.success(`${file.name} enviado como modelo.`);
+    } catch (e) {
+      toast.error('Erro ao enviar modelo.');
+      console.error(e);
+    } finally {
+      setUploadingTemplate(null);
+    }
+  };
+
+  const handleTemplatePreview = async (tpl: TemplateDoc) => {
+    if (!tpl.file_path) return;
+    const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(tpl.file_path, 3600);
+    if (error) { toast.error('Erro ao abrir modelo.'); return; }
+    setPreviewDoc({ id: tpl.id, lead_id: 'template', title: tpl.label, doc_type: tpl.id, file_name: tpl.file_name || tpl.label, file_path: tpl.file_path, file_size: tpl.file_size || 0, notes: '', created_at: '' });
+    setPreviewUrl(data.signedUrl);
+  };
+
+  const handleTemplateDownload = (tpl: TemplateDoc) => {
+    if (!tpl.file_path) return;
+    const { data } = supabase.storage.from('client-docs').getPublicUrl(tpl.file_path);
+    const a = document.createElement('a');
+    a.href = data.publicUrl;
+    a.download = tpl.file_name || `${tpl.label}.pdf`;
+    a.click();
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!deleteTemplate) return;
+    try {
+      if (deleteTemplate.file_path) {
+        await supabase.storage.from('client-docs').remove([deleteTemplate.file_path]);
+      }
+      const updated = templates.map((t) =>
+        t.id === deleteTemplate.id ? { ...t, file_name: null, file_path: null, file_size: null } : t
+      );
+      setTemplates(updated);
+      saveTemplates(updated);
+      toast.success('Modelo removido.');
+      setDeleteTemplate(null);
+    } catch (e) {
+      toast.error('Erro ao remover modelo.');
+    }
+  };
+
   // ─── Tela de Login ────────────────────────────────────────
   if (!authenticated) {
     return (
@@ -268,7 +370,7 @@ export default function Documents() {
               Documentos de Clientes
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Leads com <strong>Venda Fechada</strong> — contratos, TAPs e termos de aceite.
+              Modelos avulsos e documentos de clientes com <strong>Venda Fechada</strong>.
             </p>
           </div>
           <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">
@@ -276,18 +378,100 @@ export default function Documents() {
           </span>
         </div>
 
-        {leadsLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+        {/* ── Documentos Avulsos (Templates) ─────────────────── */}
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Stamp className="w-4 h-4 text-gold-500" />
+            <h2 className="text-base font-semibold">Documentos Avulsos</h2>
+            <span className="text-xs text-muted-foreground">— modelos de contratos para impressão ou assinatura</span>
           </div>
-        ) : leads.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-lg font-medium text-foreground">Nenhum cliente fechado</p>
-            <p className="text-sm mt-1">Leads com status "Venda Fechada" aparecerão aqui.</p>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            {templates.map((tpl) => (
+              <Card key={tpl.id} className="border-border/70 hover:border-gold-500/30 transition-colors">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                      <FileText className={`w-5 h-5 ${tpl.color}`} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm">{tpl.label}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{tpl.description}</p>
+                    </div>
+                  </div>
+
+                  {tpl.file_name ? (
+                    <>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        <span className="truncate">{tpl.file_name}</span>
+                        {tpl.file_size != null && <span>· {formatFileSize(tpl.file_size)}</span>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => handleTemplatePreview(tpl)}>
+                          <Eye className="w-3.5 h-3.5 mr-1" />Ver
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => handleTemplateDownload(tpl)}>
+                          <Download className="w-3.5 h-3.5 mr-1" />Baixar
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => setDeleteTemplate(tpl)} title="Remover modelo">
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 h-9 rounded-lg border border-dashed border-border hover:border-gold-500/50 cursor-pointer transition-colors text-xs text-muted-foreground hover:text-foreground">
+                      {uploadingTemplate === tpl.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          Enviar modelo PDF
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        disabled={uploadingTemplate === tpl.id}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleTemplateUpload(tpl.id, file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        </section>
+
+        {/* ── Leads Fechados ─────────────────────────────────── */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-gold-500" />
+              <h2 className="text-base font-semibold">Clientes</h2>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">
+              {leads.length} cliente{leads.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {leadsLoading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+            </div>
+          ) : leads.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-lg font-medium text-foreground">Nenhum cliente fechado</p>
+              <p className="text-sm mt-1">Leads com status "Venda Fechada" aparecerão aqui.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {leads.map((lead) => (
               <Card
                 key={lead.id}
@@ -310,6 +494,7 @@ export default function Documents() {
             ))}
           </div>
         )}
+        </section>
       </main>
     );
   }
@@ -495,6 +680,22 @@ export default function Documents() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteDoc} className="bg-red-500 hover:bg-red-600">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Template Confirmation */}
+      <AlertDialog open={!!deleteTemplate} onOpenChange={(o) => !o && setDeleteTemplate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover modelo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover o modelo <strong>{deleteTemplate?.label}</strong>? O arquivo enviado será excluído do storage.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTemplate} className="bg-red-500 hover:bg-red-600">Remover</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
