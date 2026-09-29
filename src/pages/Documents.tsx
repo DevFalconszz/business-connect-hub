@@ -98,13 +98,13 @@ function saveTemplates(tpls: TemplateDoc[]) {
 }
 
 function PdfViewer({ signedUrl, fileName }: { signedUrl: string; fileName: string }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [localUrl, setLocalUrl] = useState('');
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const [localUrl, setLocalUrl] = useState('');
+  const blobRef = useRef<string>('');
 
   useEffect(() => {
-    let revoked = false;
+    let cancelled = false;
     const load = async () => {
       setFetching(true);
       setFetchError(false);
@@ -112,65 +112,88 @@ function PdfViewer({ signedUrl, fileName }: { signedUrl: string; fileName: strin
         const res = await fetch(signedUrl);
         if (!res.ok) throw new Error(`${res.status}`);
         const blob = await res.blob();
-        if (!revoked) setLocalUrl(URL.createObjectURL(blob));
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        blobRef.current = url;
+        setLocalUrl(url);
       } catch {
-        if (!revoked) setFetchError(true);
+        if (!cancelled) setFetchError(true);
       } finally {
-        if (!revoked) setFetching(false);
+        if (!cancelled) setFetching(false);
       }
     };
     load();
-    return () => { revoked = true; if (localUrl) URL.revokeObjectURL(localUrl); };
+    return () => {
+      cancelled = true;
+      if (blobRef.current) URL.revokeObjectURL(blobRef.current);
+    };
   }, [signedUrl]);
 
   const handlePrint = () => {
-    iframeRef.current?.contentWindow?.print();
+    if (!localUrl) return;
+    const w = window.open(localUrl, '_blank');
+    w?.addEventListener('load', () => w.print());
   };
 
   const handleDownload = () => {
     const a = document.createElement('a');
     a.href = localUrl || signedUrl;
     a.download = fileName;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
+
+  if (fetching) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
+        <p className="text-sm text-muted-foreground">Carregando PDF...</p>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center text-muted-foreground gap-3">
+        <File className="w-12 h-12 opacity-30" />
+        <p className="text-sm">Erro ao carregar o PDF.</p>
+        <Button variant="outline" size="sm" onClick={handleDownload}>
+          <Download className="w-4 h-4 mr-1" />Baixar arquivo
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border">
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border shrink-0">
         <span className="text-sm font-medium truncate">{fileName}</span>
         <div className="flex items-center gap-2 shrink-0">
-          {!fetchError && localUrl && (
-            <>
-              <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="w-4 h-4 mr-1" />Imprimir
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleDownload}>
-                <Download className="w-4 h-4 mr-1" />Baixar
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-      {fetching ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-gold-500" />
-        </div>
-      ) : fetchError ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
-          <File className="w-10 h-10 opacity-30" />
-          <p className="text-sm">Erro ao carregar o PDF.</p>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="w-4 h-4 mr-1" />Imprimir
+          </Button>
           <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="w-4 h-4 mr-1" />Baixar arquivo
+            <Download className="w-4 h-4 mr-1" />Baixar
           </Button>
         </div>
-      ) : (
-        <iframe
-          ref={iframeRef}
-          src={localUrl}
-          className="flex-1 w-full mt-3 rounded-lg border border-border bg-white"
-          title={fileName}
-        />
-      )}
+      </div>
+      <object
+        data={localUrl}
+        type="application/pdf"
+        className="flex-1 w-full mt-3 rounded-lg border-0"
+        title={fileName}
+      >
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+          <p className="text-sm">Não foi possível exibir o PDF inline.</p>
+          <Button variant="outline" size="sm" onClick={() => window.open(localUrl, '_blank')}>
+            <Eye className="w-4 h-4 mr-1" />Abrir em nova aba
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownload}>
+            <Download className="w-4 h-4 mr-1" />Baixar
+          </Button>
+        </div>
+      </object>
     </div>
   );
 }
@@ -705,11 +728,11 @@ export default function Documents() {
 
       {/* Preview Modal */}
       <Dialog open={!!previewDoc} onOpenChange={(o) => { if (!o) { setPreviewDoc(null); setPreviewUrl(''); } }}>
-        <DialogContent className="max-w-4xl h-[85vh] p-0 flex flex-col">
-          <div className="px-6 pt-4 flex items-center justify-between">
+        <DialogContent className="max-w-4xl h-[85vh] p-0 flex flex-col overflow-hidden">
+          <div className="px-6 pt-4 pb-0 shrink-0">
             <DialogTitle className="text-base">{previewDoc?.title}</DialogTitle>
           </div>
-          <div className="flex-1 px-6 pb-6 overflow-hidden">
+          <div className="flex-1 min-h-0 px-6 pb-6 overflow-hidden">
             {previewUrl && previewDoc && (
               <PdfViewer signedUrl={previewUrl} fileName={previewDoc.file_name} />
             )}
