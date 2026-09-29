@@ -97,11 +97,41 @@ function saveTemplates(tpls: TemplateDoc[]) {
   localStorage.setItem(TEMPLATES_KEY, JSON.stringify(tpls));
 }
 
-function PdfViewer({ url, fileName }: { url: string; fileName: string }) {
+function PdfViewer({ signedUrl, fileName }: { signedUrl: string; fileName: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [localUrl, setLocalUrl] = useState('');
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+
+  useEffect(() => {
+    let revoked = false;
+    const load = async () => {
+      setFetching(true);
+      setFetchError(false);
+      try {
+        const res = await fetch(signedUrl);
+        if (!res.ok) throw new Error(`${res.status}`);
+        const blob = await res.blob();
+        if (!revoked) setLocalUrl(URL.createObjectURL(blob));
+      } catch {
+        if (!revoked) setFetchError(true);
+      } finally {
+        if (!revoked) setFetching(false);
+      }
+    };
+    load();
+    return () => { revoked = true; if (localUrl) URL.revokeObjectURL(localUrl); };
+  }, [signedUrl]);
 
   const handlePrint = () => {
     iframeRef.current?.contentWindow?.print();
+  };
+
+  const handleDownload = () => {
+    const a = document.createElement('a');
+    a.href = localUrl || signedUrl;
+    a.download = fileName;
+    a.click();
   };
 
   return (
@@ -109,22 +139,38 @@ function PdfViewer({ url, fileName }: { url: string; fileName: string }) {
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-border">
         <span className="text-sm font-medium truncate">{fileName}</span>
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="w-4 h-4 mr-1" />Imprimir
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <a href={url} download={fileName}>
-              <Download className="w-4 h-4 mr-1" />Baixar
-            </a>
-          </Button>
+          {!fetchError && localUrl && (
+            <>
+              <Button variant="outline" size="sm" onClick={handlePrint}>
+                <Printer className="w-4 h-4 mr-1" />Imprimir
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="w-4 h-4 mr-1" />Baixar
+              </Button>
+            </>
+          )}
         </div>
       </div>
-      <iframe
-        ref={iframeRef}
-        src={url}
-        className="flex-1 w-full mt-3 rounded-lg border border-border bg-white"
-        title={fileName}
-      />
+      {fetching ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-gold-500" />
+        </div>
+      ) : fetchError ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
+          <File className="w-10 h-10 opacity-30" />
+          <p className="text-sm">Erro ao carregar o PDF.</p>
+          <Button variant="outline" size="sm" onClick={handleDownload}>
+            <Download className="w-4 h-4 mr-1" />Baixar arquivo
+          </Button>
+        </div>
+      ) : (
+        <iframe
+          ref={iframeRef}
+          src={localUrl}
+          className="flex-1 w-full mt-3 rounded-lg border border-border bg-white"
+          title={fileName}
+        />
+      )}
     </div>
   );
 }
@@ -665,7 +711,7 @@ export default function Documents() {
           </div>
           <div className="flex-1 px-6 pb-6 overflow-hidden">
             {previewUrl && previewDoc && (
-              <PdfViewer url={previewUrl} fileName={previewDoc.file_name} />
+              <PdfViewer signedUrl={previewUrl} fileName={previewDoc.file_name} />
             )}
           </div>
         </DialogContent>
