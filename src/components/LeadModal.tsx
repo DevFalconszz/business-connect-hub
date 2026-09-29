@@ -8,7 +8,7 @@ import { Lead, LeadReport, STATUS_LABELS } from '@/lib/types';
 import { StatusBadge } from './StatusBadge';
 import {
   MapPin, Phone, Globe, MessageCircle, Instagram, ExternalLink, User, PhoneCall,
-  FileText, Plus, Trash2, Pencil, Megaphone, Building2, StickyNote,
+  FileText, Plus, Trash2, Pencil, Megaphone, Building2, StickyNote, CalendarDays,
 } from 'lucide-react';
 import { adLibraryUrl, adLibraryQueryTerm } from '@/lib/ad-library';
 import { useEffect, useState } from 'react';
@@ -238,7 +238,7 @@ export function LeadModal({ lead, open, onClose, onUpdate }: Props) {
 
             <Card className="rounded-xl border-border/70">
               <CardContent className="p-4 space-y-3">
-                <SectionTitle icon={Calendar}>Agendar Reuniões</SectionTitle>
+                <SectionTitle icon={CalendarDays}>Agendar Reuniões</SectionTitle>
                 <Calendar mode="single" selected={undefined} onSelect={handleDateSelect} modifiers={{ booked: selectedDates }} modifiersClassNames={{ booked: 'bg-gold-500 text-black rounded-md' }} numberOfMonths={1} className={cn("p-2 pointer-events-auto border border-border rounded-md min-w-[252px]")} />
                 {selectedDates.length > 0 && (
                   <div className="mt-2 space-y-1">
