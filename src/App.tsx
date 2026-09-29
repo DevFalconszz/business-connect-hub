@@ -13,6 +13,7 @@ import Prospecting from "./pages/Prospecting.tsx";
 import DashboardAdmin from "./pages/DashboardAdmin.tsx";
 import DashboardTM from "./pages/DashboardTM.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Documents from "./pages/Documents.tsx";
 import { AppHeader } from "./components/AppHeader.tsx";
 import { DailyReportGate } from "./components/DailyReportGate.tsx";
 
@@ -62,6 +63,14 @@ const App = () => (
                       element={
                         <AdminRoute>
                           <DashboardAdmin />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/documentos"
+                      element={
+                        <AdminRoute>
+                          <Documents />
                         </AdminRoute>
                       }
                     />

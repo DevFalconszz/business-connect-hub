@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ClipboardList, Radar, BarChart3, Gauge, LogOut } from 'lucide-react';
+import { ClipboardList, Radar, BarChart3, Gauge, FolderLock, LogOut } from 'lucide-react';
 import { isLocal } from '@/lib/env-check';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ const tabs: Tab[] = [
   { to: '/', label: 'Gestão de Leads', icon: ClipboardList, roles: ['admin', 'sdr'] },
   { to: '/prospectar', label: 'Prospectar', icon: Radar, roles: ['admin', 'sdr'] },
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin'] },
+  { to: '/documentos', label: 'Documentos', icon: FolderLock, roles: ['admin'] },
   { to: '/tm', label: 'Gestor de Tráfego', icon: Gauge, roles: ['admin', 'tm'] },
 ];
 
