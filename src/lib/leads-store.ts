@@ -1,6 +1,26 @@
 import { supabase } from '@/integrations/supabase/client';
 import { DailyReport, Lead, LeadReport } from './types';
 
+/** Exclui um lead — via RPC para bypass de RLS (admin pode excluir qualquer um). */
+export async function deleteLead(id: string): Promise<boolean> {
+  const { data, error } = await (supabase.rpc as any)('admin_delete_lead', { p_lead_id: id });
+  if (error) { console.error('deleteLead error:', error); return false; }
+  if (!data) { console.warn('deleteLead:nenhum lead excluído'); return false; }
+  return true;
+}
+
+/** Transfere um lead para outro usuário — via RPC para bypass de RLS. */
+export async function transferLead(leadId: string, targetUserId: string, targetUserName: string): Promise<boolean> {
+  const { data, error } = await (supabase.rpc as any)('admin_transfer_lead', {
+    p_lead_id: leadId,
+    p_target_user_id: targetUserId,
+    p_target_user_name: targetUserName,
+  });
+  if (error) { console.error('transferLead error:', error); return false; }
+  if (!data) { console.warn('transferLead:nenhum lead transferido'); return false; }
+  return true;
+}
+
 export async function loadAllLeadNames(): Promise<Set<string>> {
   const { data, error } = await (supabase.rpc as any)('get_all_lead_names');
   if (error) {
@@ -91,23 +111,6 @@ export async function updateLead(lead: Lead): Promise<boolean> {
     nome_decisor: lead.nome_decisor, numero_decisor: lead.numero_decisor,
   }).eq('id', lead.id);
   if (error) { console.error('Error updating lead:', error); return false; }
-  return true;
-}
-
-export async function deleteLead(id: string): Promise<boolean> {
-  const { error, count } = await supabase.from('leads').delete().eq('id', id).select('id');
-  if (error) { console.error('Error deleting lead:', error); return false; }
-  if (!count) { console.warn('deleteLead:nenhum lead afetado (RLS pode estar bloqueando)'); return false; }
-  return true;
-}
-
-export async function transferLead(leadId: string, targetUserId: string, targetUserName: string): Promise<boolean> {
-  const { error, count } = await supabase.from('leads').update({
-    user_id: targetUserId,
-    responsavel: targetUserName,
-  }).eq('id', leadId).select('id');
-  if (error) { console.error('Error transferring lead:', error); return false; }
-  if (!count) { console.warn('transferLead:nenhum lead afetado (RLS pode estar bloqueando)'); return false; }
   return true;
 }
 
