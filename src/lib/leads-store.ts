@@ -95,17 +95,19 @@ export async function updateLead(lead: Lead): Promise<boolean> {
 }
 
 export async function deleteLead(id: string): Promise<boolean> {
-  const { error } = await supabase.from('leads').delete().eq('id', id);
+  const { error, count } = await supabase.from('leads').delete().eq('id', id).select('id');
   if (error) { console.error('Error deleting lead:', error); return false; }
+  if (!count) { console.warn('deleteLead:nenhum lead afetado (RLS pode estar bloqueando)'); return false; }
   return true;
 }
 
 export async function transferLead(leadId: string, targetUserId: string, targetUserName: string): Promise<boolean> {
-  const { error } = await supabase.from('leads').update({
+  const { error, count } = await supabase.from('leads').update({
     user_id: targetUserId,
     responsavel: targetUserName,
-  }).eq('id', leadId);
+  }).eq('id', leadId).select('id');
   if (error) { console.error('Error transferring lead:', error); return false; }
+  if (!count) { console.warn('transferLead:nenhum lead afetado (RLS pode estar bloqueando)'); return false; }
   return true;
 }
 
