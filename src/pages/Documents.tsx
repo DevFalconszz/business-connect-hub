@@ -238,9 +238,10 @@ export default function Documents() {
     }
   };
 
-  const getFileUrl = (filePath: string) => {
-    const { data } = supabase.storage.from('client-docs').getPublicUrl(filePath);
-    return data.publicUrl;
+  const getFileUrl = async (filePath: string) => {
+    const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(filePath, 3600);
+    if (error) { toast.error('Erro ao gerar link.'); return null; }
+    return data.signedUrl;
   };
 
   const handlePreview = async (doc: DocRecord) => {
@@ -299,11 +300,12 @@ export default function Documents() {
     setPreviewUrl(data.signedUrl);
   };
 
-  const handleTemplateDownload = (tpl: TemplateDoc) => {
+  const handleTemplateDownload = async (tpl: TemplateDoc) => {
     if (!tpl.file_path) return;
-    const { data } = supabase.storage.from('client-docs').getPublicUrl(tpl.file_path);
+    const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(tpl.file_path, 3600);
+    if (error) { toast.error('Erro ao gerar link.'); return; }
     const a = document.createElement('a');
-    a.href = data.publicUrl;
+    a.href = data.signedUrl;
     a.download = tpl.file_name || `${tpl.label}.pdf`;
     a.click();
   };
@@ -583,10 +585,11 @@ export default function Documents() {
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handlePreview(doc)} title="Visualizar">
                       <Eye className="w-4 h-4 text-muted-foreground" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild title="Baixar">
-                      <a href={getFileUrl(doc.file_path)} download={doc.file_name}>
-                        <Download className="w-4 h-4 text-muted-foreground" />
-                      </a>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Baixar" onClick={async () => {
+                      const url = await getFileUrl(doc.file_path);
+                      if (url) { const a = document.createElement('a'); a.href = url; a.download = doc.file_name; a.click(); }
+                    }}>
+                      <Download className="w-4 h-4 text-muted-foreground" />
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setDeleteDoc(doc)} title="Excluir">
                       <Trash2 className="w-4 h-4 text-red-500" />
