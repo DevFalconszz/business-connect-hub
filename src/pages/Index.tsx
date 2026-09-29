@@ -71,6 +71,20 @@ const Index = () => {
     }
   };
 
+  const handleDeleteLeads = async (ids: string[]) => {
+    const ok = await Promise.all(ids.map(id => deleteLead(id)));
+    const successCount = ok.filter(Boolean).length;
+    setLeads(prev => prev.filter(l => !ids.includes(l.id)));
+    toast.success(`${successCount} lead${successCount !== 1 ? 's' : ''} excluído${successCount !== 1 ? 's' : ''}.`);
+  };
+
+  const handleTransferLeads = async (ids: string[], targetUserId: string, targetUserName: string) => {
+    const ok = await Promise.all(ids.map(id => transferLead(id, targetUserId, targetUserName)));
+    const successCount = ok.filter(Boolean).length;
+    setLeads(prev => prev.map(l => ids.includes(l.id) ? { ...l, user_id: targetUserId, responsavel: targetUserName } : l));
+    toast.success(`${successCount} lead${successCount !== 1 ? 's' : ''} transferido${successCount !== 1 ? 's' : ''} para ${targetUserName}.`);
+  };
+
   const filtered = useMemo(() => {
     if (!search.trim()) return leads;
     const q = search.toLowerCase();
@@ -115,7 +129,9 @@ const Index = () => {
               role={role}
               users={users}
               onDeleteLead={handleDeleteLead}
+              onDeleteLeads={handleDeleteLeads}
               onTransferLead={handleTransferLead}
+              onTransferLeads={handleTransferLeads}
             />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
