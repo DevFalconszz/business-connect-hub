@@ -97,105 +97,9 @@ function saveTemplates(tpls: TemplateDoc[]) {
   localStorage.setItem(TEMPLATES_KEY, JSON.stringify(tpls));
 }
 
-function PdfViewer({ signedUrl, fileName }: { signedUrl: string; fileName: string }) {
-  const [fetching, setFetching] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-  const [localUrl, setLocalUrl] = useState('');
-  const blobRef = useRef<string>('');
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setFetching(true);
-      setFetchError(false);
-      try {
-        const res = await fetch(signedUrl);
-        if (!res.ok) throw new Error(`${res.status}`);
-        const blob = await res.blob();
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        blobRef.current = url;
-        setLocalUrl(url);
-      } catch {
-        if (!cancelled) setFetchError(true);
-      } finally {
-        if (!cancelled) setFetching(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-      if (blobRef.current) URL.revokeObjectURL(blobRef.current);
-    };
-  }, [signedUrl]);
-
-  const handlePrint = () => {
-    if (!localUrl) return;
-    const w = window.open(localUrl, '_blank');
-    w?.addEventListener('load', () => w.print());
-  };
-
-  const handleDownload = () => {
-    const a = document.createElement('a');
-    a.href = localUrl || signedUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  if (fetching) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-500" />
-        <p className="text-sm text-muted-foreground">Carregando PDF...</p>
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center text-muted-foreground gap-3">
-        <File className="w-12 h-12 opacity-30" />
-        <p className="text-sm">Erro ao carregar o PDF.</p>
-        <Button variant="outline" size="sm" onClick={handleDownload}>
-          <Download className="w-4 h-4 mr-1" />Baixar arquivo
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between gap-2 pb-3 border-b border-border shrink-0">
-        <span className="text-sm font-medium truncate">{fileName}</span>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="w-4 h-4 mr-1" />Imprimir
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="w-4 h-4 mr-1" />Baixar
-          </Button>
-        </div>
-      </div>
-      <object
-        data={localUrl}
-        type="application/pdf"
-        className="flex-1 w-full mt-3 rounded-lg border-0"
-        title={fileName}
-      >
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
-          <p className="text-sm">Não foi possível exibir o PDF inline.</p>
-          <Button variant="outline" size="sm" onClick={() => window.open(localUrl, '_blank')}>
-            <Eye className="w-4 h-4 mr-1" />Abrir em nova aba
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="w-4 h-4 mr-1" />Baixar
-          </Button>
-        </div>
-      </object>
-    </div>
-  );
+function openPdf(signedUrl: string) {
+  const w = window.open(signedUrl, '_blank');
+  if (!w) toast.error('Popup bloqueado. Permita popups para este site.');
 }
 
 export default function Documents() {
@@ -215,8 +119,6 @@ export default function Documents() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const [previewDoc, setPreviewDoc] = useState<DocRecord | null>(null);
-  const [previewUrl, setPreviewUrl] = useState('');
   const [deleteDoc, setDeleteDoc] = useState<DocRecord | null>(null);
 
   const [templates, setTemplates] = useState<TemplateDoc[]>(loadTemplates);
@@ -316,8 +218,7 @@ export default function Documents() {
   const handlePreview = async (doc: DocRecord) => {
     const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(doc.file_path, 3600);
     if (error) { toast.error('Erro ao abrir documento.'); return; }
-    setPreviewDoc(doc);
-    setPreviewUrl(data.signedUrl);
+    openPdf(data.signedUrl);
   };
 
   const handleDeleteDoc = async () => {
@@ -365,8 +266,7 @@ export default function Documents() {
     if (!tpl.file_path) return;
     const { data, error } = await supabase.storage.from('client-docs').createSignedUrl(tpl.file_path, 3600);
     if (error) { toast.error('Erro ao abrir modelo.'); return; }
-    setPreviewDoc({ id: tpl.id, lead_id: 'template', title: tpl.label, doc_type: tpl.id, file_name: tpl.file_name || tpl.label, file_path: tpl.file_path, file_size: tpl.file_size || 0, notes: '', created_at: '' });
-    setPreviewUrl(data.signedUrl);
+    openPdf(data.signedUrl);
   };
 
   const handleTemplateDownload = async (tpl: TemplateDoc) => {
@@ -723,20 +623,6 @@ export default function Documents() {
               Enviar
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Preview Modal */}
-      <Dialog open={!!previewDoc} onOpenChange={(o) => { if (!o) { setPreviewDoc(null); setPreviewUrl(''); } }}>
-        <DialogContent className="max-w-4xl h-[85vh] p-0 flex flex-col overflow-hidden">
-          <div className="px-6 pt-4 pb-0 shrink-0">
-            <DialogTitle className="text-base">{previewDoc?.title}</DialogTitle>
-          </div>
-          <div className="flex-1 min-h-0 px-6 pb-6 overflow-hidden">
-            {previewUrl && previewDoc && (
-              <PdfViewer signedUrl={previewUrl} fileName={previewDoc.file_name} />
-            )}
-          </div>
         </DialogContent>
       </Dialog>
 
