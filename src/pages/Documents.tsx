@@ -60,6 +60,9 @@ const DEFAULT_TEMPLATES: TemplateDoc[] = [
   { id: 'tpl-contrato', label: 'Contrato', description: 'Modelo de contrato padrão para impressão ou assinatura.', color: 'text-blue-500', file_name: null, file_path: null, file_size: null },
   { id: 'tpl-tap', label: 'TAP', description: 'Termo de Abertura de Projeto — modelo base.', color: 'text-purple-500', file_name: null, file_path: null, file_size: null },
   { id: 'tpl-aceite', label: 'Termo de Aceite', description: 'Termo de aceite final — modelo para assinatura do cliente.', color: 'text-emerald-500', file_name: null, file_path: null, file_size: null },
+  { id: 'tpl-starter', label: 'Contrato Starter', description: 'Contrato padrão da oferta Starter para marketing.', color: 'text-sky-500', file_name: null, file_path: null, file_size: null },
+  { id: 'tpl-professional', label: 'Contrato Professional', description: 'Contrato padrão da oferta Professional para marketing.', color: 'text-amber-500', file_name: null, file_path: null, file_size: null },
+  { id: 'tpl-enterprise', label: 'Contrato Enterprise', description: 'Contrato padrão da oferta Enterprise para marketing.', color: 'text-rose-500', file_name: null, file_path: null, file_size: null },
 ];
 
 const DOC_TYPES = [
@@ -356,7 +359,7 @@ export default function Documents() {
               Documentos de Clientes
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Modelos avulsos e documentos de clientes com <strong>Venda Fechada</strong>.
+              Modelos padrões e documentos de clientes com <strong>Venda Fechada</strong>.
             </p>
           </div>
           <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">
@@ -364,11 +367,11 @@ export default function Documents() {
           </span>
         </div>
 
-        {/* ── Documentos Avulsos (Templates) ─────────────────── */}
+        {/* ── Documentos Padrões (Templates) ─────────────────── */}
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Stamp className="w-4 h-4 text-gold-500" />
-            <h2 className="text-base font-semibold">Documentos Avulsos</h2>
+            <h2 className="text-base font-semibold">Documentos Padrões</h2>
             <span className="text-xs text-muted-foreground">— modelos de contratos para impressão ou assinatura</span>
           </div>
 
