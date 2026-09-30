@@ -56,8 +56,6 @@ interface TemplateDoc {
   file_size: number | null;
 }
 
-const TEMPLATES_KEY = 'business-connect-templates';
-
 const DEFAULT_TEMPLATES: TemplateDoc[] = [
   { id: 'tpl-contrato', label: 'Contrato', description: 'Modelo de contrato padrão para impressão ou assinatura.', color: 'text-blue-500', file_name: null, file_path: null, file_size: null },
   { id: 'tpl-tap', label: 'TAP', description: 'Termo de Abertura de Projeto — modelo base.', color: 'text-purple-500', file_name: null, file_path: null, file_size: null },
@@ -79,22 +77,30 @@ const formatFileSize = (bytes: number) => {
   return `${(bytes / 1048576).toFixed(1)} MB`;
 };
 
-function loadTemplates(): TemplateDoc[] {
+async function loadTemplates(): Promise<TemplateDoc[]> {
   try {
-    const raw = localStorage.getItem(TEMPLATES_KEY);
-    if (raw) {
-      const saved = JSON.parse(raw) as TemplateDoc[];
-      return DEFAULT_TEMPLATES.map((def) => {
-        const s = saved.find((x) => x.id === def.id);
-        return s ? { ...def, file_name: s.file_name, file_path: s.file_path, file_size: s.file_size } : def;
-      });
-    }
-  } catch { /* ignore */ }
-  return DEFAULT_TEMPLATES;
+    const { data, error } = await supabase.from('document_templates').select('*');
+    if (error) throw error;
+    return DEFAULT_TEMPLATES.map((def) => {
+      const s = (data || []).find((x: any) => x.id === def.id);
+      return s ? { ...def, file_name: s.file_name, file_path: s.file_path, file_size: s.file_size } : def;
+    });
+  } catch {
+    return DEFAULT_TEMPLATES;
+  }
 }
 
-function saveTemplates(tpls: TemplateDoc[]) {
-  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(tpls));
+async function saveTemplates(tpls: TemplateDoc[]) {
+  try {
+    const rows = tpls.map((t) => ({
+      id: t.id,
+      file_name: t.file_name,
+      file_path: t.file_path,
+      file_size: t.file_size,
+      updated_at: new Date().toISOString(),
+    }));
+    await supabase.from('document_templates').upsert(rows);
+  } catch { /* ignore */ }
 }
 
 function openPdf(signedUrl: string) {
@@ -121,7 +127,7 @@ export default function Documents() {
 
   const [deleteDoc, setDeleteDoc] = useState<DocRecord | null>(null);
 
-  const [templates, setTemplates] = useState<TemplateDoc[]>(loadTemplates);
+  const [templates, setTemplates] = useState<TemplateDoc[]>(DEFAULT_TEMPLATES);
   const [uploadingTemplate, setUploadingTemplate] = useState<string | null>(null);
   const [deleteTemplate, setDeleteTemplate] = useState<TemplateDoc | null>(null);
 
@@ -165,6 +171,10 @@ export default function Documents() {
     } finally {
       setDocsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadTemplates().then(setTemplates);
   }, []);
 
   useEffect(() => {
