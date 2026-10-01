@@ -213,7 +213,7 @@ export default function Prospecting() {
                   <Zap className="w-3 h-3" /> IA Local
                 </span>
               ) : (
-                <span className="ml-auto flex items-center gap-1 text-xs font-mono text-muted-foreground bg-accent border border-border px-2 py-0.5 rounded-full">
+                <span className="ml-auto flex items-center gap-1 text-xs font-mono text-green-500 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">
                   <Wifi className="w-3 h-3" /> Modo Online
                 </span>
               )}
