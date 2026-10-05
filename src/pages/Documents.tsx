@@ -656,36 +656,36 @@ export default function Documents() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <Dialog open={!!deleteDoc} onOpenChange={(o) => { if (!o) setDeleteDoc(null); }}>
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Excluir documento?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Excluir <strong>{deleteDoc?.title}</strong>? Esta ação não pode ser desfeita.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDoc(null)}>Cancelar</Button>
-            <Button onClick={handleDeleteDoc} className="bg-red-500 hover:bg-red-600 text-white">Excluir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDeleteDoc(null)}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <DialogTitle className="text-lg font-semibold mb-2">Excluir documento?</DialogTitle>
+            <p className="text-sm text-muted-foreground mb-4">
+              Excluir <strong>{deleteDoc.title}</strong>? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteDoc(null)}>Cancelar</Button>
+              <Button onClick={handleDeleteDoc} className="bg-red-500 hover:bg-red-600 text-white">Excluir</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Template Confirmation */}
-      <Dialog open={!!deleteTemplate} onOpenChange={(o) => { if (!o) setDeleteTemplate(null); }}>
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Remover modelo?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Remover o modelo <strong>{deleteTemplate?.label}</strong>? O arquivo enviado será excluído do storage.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTemplate(null)}>Cancelar</Button>
-            <Button onClick={handleDeleteTemplate} className="bg-red-500 hover:bg-red-600 text-white">Remover</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDeleteTemplate(null)}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <DialogTitle className="text-lg font-semibold mb-2">Remover modelo?</DialogTitle>
+            <p className="text-sm text-muted-foreground mb-4">
+              Remover o modelo <strong>{deleteTemplate.label}</strong>? O arquivo enviado será excluído do storage.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTemplate(null)}>Cancelar</Button>
+              <Button onClick={handleDeleteTemplate} className="bg-red-500 hover:bg-red-600 text-white">Remover</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
