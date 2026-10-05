@@ -24,6 +24,7 @@ const Index = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isMobile = useIsMobile();
   const leadsRef = useRef<Lead[]>([]);
   leadsRef.current = leads;
@@ -45,35 +46,29 @@ const Index = () => {
     const reloadLeads = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        loadLeads().then(setLeads);
-      }, 300);
+        loadLeads().then(data => {
+          setLeads(data);
+          setLastRefresh(new Date());
+        });
+      }, 200);
     };
 
-    // Polling a cada 30s como fallback (caso realtime falhe)
+    // Polling a cada 10s como garantia de atualização
     const pollInterval = setInterval(() => {
-      loadLeads().then(setLeads);
-    }, 30000);
+      loadLeads().then(data => {
+        setLeads(data);
+        setLastRefresh(new Date());
+      });
+    }, 10000);
 
-    // Realtime
+    // Realtime (melhor esforço)
     const channelName = `leads-rt-${myUserId}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'leads' },
-        (payload) => {
-          if (isAdmin) {
-            reloadLeads();
-            return;
-          }
-          const old = payload.old as Record<string, unknown>;
-          const newRow = payload.new as Record<string, unknown>;
-          const oldUserId = old?.user_id as string | undefined;
-          const newUserId = newRow?.user_id as string | undefined;
-          if (oldUserId === myUserId || newUserId === myUserId) {
-            reloadLeads();
-          }
-        }
+        () => { reloadLeads(); }
       )
       .subscribe();
 
@@ -162,6 +157,11 @@ const Index = () => {
                 <Plus className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Adicionar</span><span className="sm:hidden">Novo</span>
               </Button>
               <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">{leads.length} leads</span>
+              {lastRefresh && (
+                <span className="text-[10px] text-muted-foreground/60 font-mono">
+                  {lastRefresh.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              )}
             </div>
           </div>
         </div>
