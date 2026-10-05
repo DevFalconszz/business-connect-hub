@@ -11,11 +11,12 @@ import { Plus, Search, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchAdminUsers } from '@/lib/dashboard-api';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { detectEnv } from '@/lib/env-check';
 
 const Index = () => {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const isAdmin = role === 'admin';
   const [leads, setLeads] = useState<Lead[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -34,6 +35,56 @@ const Index = () => {
       if (isAdmin) fetchAdminUsers().then(setUsers).catch(() => {});
     });
   }, [isAdmin]);
+
+  // Realtime: atualiza leads quando houver mudança no banco
+  useEffect(() => {
+    const myUserId = user?.id;
+    const channel = supabase
+      .channel('leads-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'leads' },
+        (payload) => {
+          const updated = payload.new as Lead;
+          const old = payload.old as Record<string, unknown>;
+          const prevUserId = old.user_id as string | undefined;
+
+          // Admin: sempre recarrega
+          if (isAdmin) {
+            loadLeads().then(setLeads);
+            return;
+          }
+
+          // SDR: só recarrega se o lead era dele (foi tirado) ou passou a ser dele
+          if (prevUserId === myUserId || updated.user_id === myUserId) {
+            loadLeads().then(setLeads);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'leads' },
+        () => {
+          if (isAdmin) {
+            loadLeads().then(setLeads);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'leads' },
+        (payload) => {
+          const deleted = payload.old as Record<string, unknown>;
+          const deletedUserId = deleted.user_id as string | undefined;
+          if (isAdmin || deletedUserId === myUserId) {
+            loadLeads().then(setLeads);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin, user?.id]);
 
   const handleUpdateLead = useCallback(async (updated: Lead) => {
     setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
