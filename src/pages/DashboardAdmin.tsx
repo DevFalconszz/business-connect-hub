@@ -39,7 +39,7 @@ import { toast } from 'sonner';
 const STATUS_COLORS: Record<string, string> = {
   analise_pendente: '#f59e0b',
   em_analise: '#f97316',
-  ponto_contato: '#06b6d4',
+  ponto_contato: '#ec4899',
   follow_up: '#0ea5e9',
   reuniao_agendada: '#8b5cf6',
   recusado: '#ef4444',

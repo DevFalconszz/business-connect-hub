@@ -15,7 +15,7 @@ interface Props {
 const statusCardBorder: Record<string, string> = {
   analise_pendente: 'border-l-4 border-l-amber-500',
   em_analise: 'border-l-4 border-l-orange-500',
-  ponto_contato: 'border-l-4 border-l-cyan-500',
+  ponto_contato: 'border-l-4 border-l-pink-500',
   follow_up: 'border-l-4 border-l-sky-500',
   reuniao_agendada: 'border-l-4 border-l-violet-500',
   recusado: 'border-l-4 border-l-red-500',
