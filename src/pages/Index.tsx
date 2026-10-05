@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead, AdminUser } from '@/lib/types';
@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { fetchAdminUsers } from '@/lib/dashboard-api';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { detectEnv } from '@/lib/env-check';
 
 const Index = () => {
   const { role, user } = useAuth();
@@ -26,17 +25,18 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const isMobile = useIsMobile();
+  const leadsRef = useRef<Lead[]>([]);
+  leadsRef.current = leads;
 
   useEffect(() => { if (isMobile) setViewMode('cards'); }, [isMobile]);
 
+  // Carga inicial + usuários admin
   useEffect(() => {
-    detectEnv().then(() => {
-      loadLeads().then(data => { setLeads(data); setLoading(false); });
-      if (isAdmin) fetchAdminUsers().then(setUsers).catch(() => {});
-    });
+    loadLeads().then(data => { setLeads(data); setLoading(false); });
+    if (isAdmin) fetchAdminUsers().then(setUsers).catch(() => {});
   }, [isAdmin]);
 
-  // Realtime: atualiza leads quando houver mudança no banco
+  // Realtime + polling de segurança
   useEffect(() => {
     const myUserId = user?.id;
     if (!myUserId) return;
@@ -49,7 +49,13 @@ const Index = () => {
       }, 300);
     };
 
-    const channelName = `leads-rt-${myUserId}`;
+    // Polling a cada 30s como fallback (caso realtime falhe)
+    const pollInterval = setInterval(() => {
+      loadLeads().then(setLeads);
+    }, 30000);
+
+    // Realtime
+    const channelName = `leads-rt-${myUserId}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -60,7 +66,6 @@ const Index = () => {
             reloadLeads();
             return;
           }
-          // SDR: só recarrega se afetado
           const old = payload.old as Record<string, unknown>;
           const newRow = payload.new as Record<string, unknown>;
           const oldUserId = old?.user_id as string | undefined;
@@ -74,6 +79,7 @@ const Index = () => {
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [isAdmin, user?.id]);
