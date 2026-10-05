@@ -39,51 +39,43 @@ const Index = () => {
   // Realtime: atualiza leads quando houver mudança no banco
   useEffect(() => {
     const myUserId = user?.id;
+    if (!myUserId) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const reloadLeads = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadLeads().then(setLeads);
+      }, 300);
+    };
+
+    const channelName = `leads-rt-${myUserId}`;
     const channel = supabase
-      .channel('leads-realtime')
+      .channel(channelName)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'leads' },
+        { event: '*', schema: 'public', table: 'leads' },
         (payload) => {
-          const updated = payload.new as Lead;
-          const old = payload.old as Record<string, unknown>;
-          const prevUserId = old.user_id as string | undefined;
-
-          // Admin: sempre recarrega
           if (isAdmin) {
-            loadLeads().then(setLeads);
+            reloadLeads();
             return;
           }
-
-          // SDR: só recarrega se o lead era dele (foi tirado) ou passou a ser dele
-          if (prevUserId === myUserId || updated.user_id === myUserId) {
-            loadLeads().then(setLeads);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'leads' },
-        () => {
-          if (isAdmin) {
-            loadLeads().then(setLeads);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'leads' },
-        (payload) => {
-          const deleted = payload.old as Record<string, unknown>;
-          const deletedUserId = deleted.user_id as string | undefined;
-          if (isAdmin || deletedUserId === myUserId) {
-            loadLeads().then(setLeads);
+          // SDR: só recarrega se afetado
+          const old = payload.old as Record<string, unknown>;
+          const newRow = payload.new as Record<string, unknown>;
+          const oldUserId = old?.user_id as string | undefined;
+          const newUserId = newRow?.user_id as string | undefined;
+          if (oldUserId === myUserId || newUserId === myUserId) {
+            reloadLeads();
           }
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, [isAdmin, user?.id]);
 
   const handleUpdateLead = useCallback(async (updated: Lead) => {
