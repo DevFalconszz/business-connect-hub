@@ -21,6 +21,7 @@ import { initials, avatarColor } from '@/lib/avatars';
 const STATUS_COLORS: Record<string, string> = {
   analise_pendente: '#f59e0b',
   em_analise: '#f97316',
+  ponto_contato: '#06b6d4',
   follow_up: '#0ea5e9',
   reuniao_agendada: '#8b5cf6',
   recusado: '#ef4444',
@@ -30,6 +31,7 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_ORDER: LeadStatus[] = [
   'analise_pendente',
   'em_analise',
+  'ponto_contato',
   'follow_up',
   'reuniao_agendada',
   'venda_fechada',

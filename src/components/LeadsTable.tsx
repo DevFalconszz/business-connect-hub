@@ -30,6 +30,7 @@ interface Props {
 const statusRowBg: Record<string, string> = {
   analise_pendente: 'bg-amber-500/[0.03]',
   em_analise: 'bg-orange-500/[0.03]',
+  ponto_contato: 'bg-cyan-500/[0.03]',
   follow_up: 'bg-sky-500/[0.03]',
   reuniao_agendada: 'bg-violet-500/[0.03]',
   recusado: 'bg-red-500/[0.04]',

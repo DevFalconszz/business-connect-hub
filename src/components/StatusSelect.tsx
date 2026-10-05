@@ -9,6 +9,7 @@ interface Props {
 const statusStyles: Record<string, string> = {
   analise_pendente: 'bg-amber-500/15 text-amber-400',
   em_analise: 'bg-orange-500/15 text-orange-400',
+  ponto_contato: 'bg-cyan-500/15 text-cyan-400',
   follow_up: 'bg-sky-500/15 text-sky-400',
   reuniao_agendada: 'bg-violet-500/15 text-violet-400',
   recusado: 'bg-red-500/15 text-red-400',
@@ -16,7 +17,7 @@ const statusStyles: Record<string, string> = {
 };
 
 const STATUSES: LeadStatus[] = [
-  'analise_pendente', 'em_analise', 'follow_up',
+  'analise_pendente', 'em_analise', 'ponto_contato', 'follow_up',
   'reuniao_agendada', 'recusado', 'venda_fechada',
 ];
 
