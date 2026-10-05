@@ -399,7 +399,7 @@ export default function Documents() {
                         <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => handleTemplateDownload(tpl)}>
                           <Download className="w-3.5 h-3.5 mr-1" />Baixar
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => setDeleteTemplate(tpl)} title="Remover modelo">
+                        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => setDeleteTemplate(tpl)} title="Remover modelo">
                           <Trash2 className="w-3.5 h-3.5 text-red-500" />
                         </Button>
                       </div>
@@ -675,7 +675,7 @@ export default function Documents() {
       {deleteTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDeleteTemplate(null)}>
           <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <DialogTitle className="text-lg font-semibold mb-2">Remover modelo?</DialogTitle>
+            <h3 className="text-lg font-semibold mb-2">Remover modelo?</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Remover o modelo <strong>{deleteTemplate.label}</strong>? O arquivo enviado será excluído do storage.
             </p>
