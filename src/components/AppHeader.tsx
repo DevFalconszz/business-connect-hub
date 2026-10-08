@@ -1,8 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ClipboardList, Radar, BarChart3, Gauge, FolderLock, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { ClipboardList, Radar, BarChart3, Gauge, FolderLock, KeyRound, LogOut, X } from 'lucide-react';
 import { isLocal } from '@/lib/env-check';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { ChangePasswordForm } from '@/components/ChangePasswordForm';
 
 interface Tab {
   to: string;
@@ -22,6 +24,7 @@ const tabs: Tab[] = [
 export function AppHeader() {
   const location = useLocation();
   const { signOut, user, role } = useAuth();
+  const [pwOpen, setPwOpen] = useState(false);
 
   const visibleTabs = tabs.filter((tab) => !tab.roles || (role && tab.roles.includes(role)));
 
@@ -39,6 +42,14 @@ export function AppHeader() {
                 LOCAL
               </span>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPwOpen(true)}
+              className="md:hidden text-muted-foreground hover:text-foreground hover:bg-accent h-9 px-3"
+            >
+              <KeyRound className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -69,6 +80,16 @@ export function AppHeader() {
             })}
           </nav>
           <div className="hidden md:flex items-center gap-3 ml-4 pl-4 border-l border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPwOpen(true)}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent h-9 px-3"
+              title="Alterar senha"
+            >
+              <KeyRound className="w-4 h-4" />
+              <span className="hidden xl:inline ml-1">Alterar senha</span>
+            </Button>
             <span className="text-xs text-muted-foreground hidden sm:inline whitespace-nowrap">
               {user?.user_metadata?.full_name || user?.email || ''}
             </span>
@@ -84,6 +105,31 @@ export function AppHeader() {
           </div>
         </div>
       </div>
+
+      {pwOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setPwOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-border bg-card text-foreground shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Alterar senha</h3>
+              <button
+                type="button"
+                onClick={() => setPwOpen(false)}
+                aria-label="Fechar"
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <ChangePasswordForm onSuccess={() => setPwOpen(false)} />
+          </div>
+        </div>
+      )}
     </header>
   );
 }
