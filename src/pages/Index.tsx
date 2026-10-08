@@ -24,7 +24,6 @@ const Index = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isMobile = useIsMobile();
   const leadsRef = useRef<Lead[]>([]);
   leadsRef.current = leads;
@@ -48,7 +47,6 @@ const Index = () => {
       debounceTimer = setTimeout(() => {
         loadLeads().then(data => {
           setLeads(data);
-          setLastRefresh(new Date());
         });
       }, 200);
     };
@@ -57,7 +55,6 @@ const Index = () => {
     const pollInterval = setInterval(() => {
       loadLeads().then(data => {
         setLeads(data);
-        setLastRefresh(new Date());
       });
     }, 10000);
 
@@ -156,12 +153,7 @@ const Index = () => {
               <Button className="h-11 rounded-xl px-4 text-sm bg-gold-500 text-black hover:bg-gold-600" onClick={() => setShowAdd(true)}>
                 <Plus className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Adicionar</span><span className="sm:hidden">Novo</span>
               </Button>
-              <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">{leads.length} leads</span>
-              {lastRefresh && (
-                <span className="text-[10px] text-muted-foreground/60 font-mono">
-                  {lastRefresh.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-              )}
+              <span className="text-xs font-medium text-muted-foreground bg-accent px-2.5 py-1 rounded-full">{filtered.length} leads</span>
             </div>
           </div>
         </div>
