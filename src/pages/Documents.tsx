@@ -480,6 +480,22 @@ export default function Documents() {
           </div>
         )}
         </section>
+
+      {/* Delete Template Confirmation */}
+      {deleteTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDeleteTemplate(null)}>
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2">Remover modelo?</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Remover o modelo <strong>{deleteTemplate.label}</strong>? O arquivo enviado será excluído do storage.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTemplate(null)}>Cancelar</Button>
+              <Button onClick={handleDeleteTemplate} className="bg-red-500 hover:bg-red-600 text-white">Remover</Button>
+            </div>
+          </div>
+        </div>
+      )}
       </main>
     );
   }
@@ -666,22 +682,6 @@ export default function Documents() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteDoc(null)}>Cancelar</Button>
               <Button onClick={handleDeleteDoc} className="bg-red-500 hover:bg-red-600 text-white">Excluir</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Template Confirmation */}
-      {deleteTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setDeleteTemplate(null)}>
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-2">Remover modelo?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Remover o modelo <strong>{deleteTemplate.label}</strong>? O arquivo enviado será excluído do storage.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDeleteTemplate(null)}>Cancelar</Button>
-              <Button onClick={handleDeleteTemplate} className="bg-red-500 hover:bg-red-600 text-white">Remover</Button>
             </div>
           </div>
         </div>
