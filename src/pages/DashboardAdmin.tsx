@@ -94,7 +94,7 @@ export default function DashboardAdmin() {
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'sdr' });
-  const [editUser, setEditUser] = useState({ name: '', role: '' });
+  const [editUser, setEditUser] = useState({ name: '', role: '', password: '' });
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
   const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
 
@@ -219,12 +219,24 @@ export default function DashboardAdmin() {
 
   const handleEditUser = async () => {
     if (!selectedUser) return;
+    if (editUser.password && editUser.password.length < 6) {
+      toast.error('A nova senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
     try {
-      const updated = await updateAdminUser(selectedUser.id, { name: editUser.name, role: editUser.role });
+      const updated = await updateAdminUser(selectedUser.id, {
+        name: editUser.name,
+        role: editUser.role,
+        password: editUser.password || undefined,
+      });
       setUsers((prev) => prev.map((u) => u.id === selectedUser.id ? { ...u, name: updated.name, role: updated.role } : u));
       setShowEditUserModal(false);
       setSelectedUser(null);
-      toast.success('Usuário atualizado com sucesso.');
+      toast.success(
+        editUser.password
+          ? 'Usuário atualizado e senha redefinida com sucesso.'
+          : 'Usuário atualizado com sucesso.'
+      );
     } catch (e: any) {
       toast.error(e?.message || 'Erro ao atualizar usuário.');
     }
@@ -245,7 +257,7 @@ export default function DashboardAdmin() {
 
   const openEditModal = (user: AdminUser) => {
     setSelectedUser(user);
-    setEditUser({ name: user.name || '', role: user.role || 'sdr' });
+    setEditUser({ name: user.name || '', role: user.role || 'sdr', password: '' });
     setShowEditUserModal(true);
   };
 
@@ -1085,6 +1097,29 @@ export default function DashboardAdmin() {
                         <option value="tm">TM</option>
                         <option value="admin">Admin</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Nova Senha (opcional)</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword['edit'] ? 'text' : 'password'}
+                          value={editUser.password}
+                          onChange={(e) => setEditUser({ ...editUser, password: e.target.value })}
+                          className="w-full mt-1 px-3 py-2 pr-10 rounded-lg border border-border bg-background text-foreground"
+                          placeholder="Deixe em branco para não alterar"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('edit')}
+                          className="absolute right-2 top-1/2 mt-0.5 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword['edit'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        O usuário poderá entrar com essa nova senha na próxima vez que fizer login.
+                      </p>
                     </div>
                     <div className="flex justify-end gap-2 pt-4">
                       <Button variant="outline" onClick={() => setShowEditUserModal(false)}>

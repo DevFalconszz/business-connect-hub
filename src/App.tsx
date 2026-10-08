@@ -8,7 +8,6 @@ import { useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import Auth from "./pages/Auth.tsx";
-import ResetPassword from "./pages/ResetPassword.tsx";
 import Index from "./pages/Index.tsx";
 import Prospecting from "./pages/Prospecting.tsx";
 import DashboardAdmin from "./pages/DashboardAdmin.tsx";
@@ -43,7 +42,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Auth />} />
-            <Route path="/redefinir-senha" element={<ResetPassword />} />
             <Route
               path="/*"
               element={
