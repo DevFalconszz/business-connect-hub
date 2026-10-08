@@ -431,8 +431,8 @@ export default function DashboardAdmin() {
               </CardHeader>
               <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={100} label>
+                  <PieChart margin={{ top: 24, right: 12, bottom: 4, left: 12 }}>
+                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={88} label={{ fontSize: 11 }}>
                       {byStatus.map((entry) => (
                         <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || '#9ca3af'} />
                       ))}
@@ -491,8 +491,8 @@ export default function DashboardAdmin() {
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={120} label>
+                  <PieChart margin={{ top: 24, right: 12, bottom: 4, left: 12 }}>
+                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={104} label={{ fontSize: 11 }}>
                       {byStatus.map((entry) => (
                         <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || '#9ca3af'} />
                       ))}
@@ -767,7 +767,7 @@ export default function DashboardAdmin() {
                       </CardHeader>
                       <CardContent className="h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
+                          <PieChart margin={{ top: 24, right: 12, bottom: 4, left: 12 }}>
                             <Pie
                               data={[
                                 { name: 'Chave Principal', value: apiSummary.primary_key_usage },
@@ -775,8 +775,8 @@ export default function DashboardAdmin() {
                               ]}
                               dataKey="value"
                               nameKey="name"
-                              outerRadius={100}
-                              label
+                              outerRadius={88}
+                              label={{ fontSize: 11 }}
                             >
                               <Cell fill="#eab308" />
                               <Cell fill="#8b5cf6" />
