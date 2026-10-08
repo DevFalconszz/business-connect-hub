@@ -432,13 +432,13 @@ export default function DashboardAdmin() {
               <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart margin={{ top: 24, right: 12, bottom: 4, left: 12 }}>
-                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={88} label={{ fontSize: 11 }}>
+                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={74} label={{ fontSize: 11 }}>
                       {byStatus.map((entry) => (
                         <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || '#9ca3af'} />
                       ))}
                     </Pie>
                     <Tooltip />
-                    <Legend verticalAlign="top" />
+                    <Legend wrapperStyle={{ paddingTop: 24 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -492,13 +492,13 @@ export default function DashboardAdmin() {
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart margin={{ top: 24, right: 12, bottom: 4, left: 12 }}>
-                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={104} label={{ fontSize: 11 }}>
+                    <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={92} label={{ fontSize: 11 }}>
                       {byStatus.map((entry) => (
                         <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || '#9ca3af'} />
                       ))}
                     </Pie>
                     <Tooltip />
-                    <Legend verticalAlign="top" />
+                    <Legend wrapperStyle={{ paddingTop: 24 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -775,14 +775,14 @@ export default function DashboardAdmin() {
                               ]}
                               dataKey="value"
                               nameKey="name"
-                              outerRadius={88}
+                              outerRadius={74}
                               label={{ fontSize: 11 }}
                             >
                               <Cell fill="#eab308" />
                               <Cell fill="#8b5cf6" />
                             </Pie>
 <Tooltip />
-                          <Legend verticalAlign="top" />
+                          <Legend wrapperStyle={{ paddingTop: 24 }} />
                         </PieChart>
                         </ResponsiveContainer>
                       </CardContent>
