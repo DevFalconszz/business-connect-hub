@@ -438,7 +438,7 @@ export default function DashboardAdmin() {
                       ))}
                     </Pie>
                     <Tooltip />
-                    <Legend />
+                    <Legend verticalAlign="top" />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -498,7 +498,7 @@ export default function DashboardAdmin() {
                       ))}
                     </Pie>
                     <Tooltip />
-                    <Legend />
+                    <Legend verticalAlign="top" />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -781,9 +781,9 @@ export default function DashboardAdmin() {
                               <Cell fill="#eab308" />
                               <Cell fill="#8b5cf6" />
                             </Pie>
-                            <Tooltip />
-                            <Legend />
-                          </PieChart>
+<Tooltip />
+                          <Legend verticalAlign="top" />
+                        </PieChart>
                         </ResponsiveContainer>
                       </CardContent>
                     </Card>
